@@ -37,7 +37,7 @@ function callMe() {
 
 var debounceMe = $.debounce(callMe,500);
 
-// the message 'Called' will only display once, though debounceMe() is called three times
+// log message will only display once, though debounceMe() is called three times
 debounceMe();
 debounceMe();
 debounceMe();
@@ -158,7 +158,7 @@ Messages will only log when the mouse pointer enters/leaves `<div id="watchme">`
 #### $.Event.getMousePosition(event)
 - Returns the current mouse x/y pixel coordinates from the given `event`.
 - Data will be returned as an object with the structure of `{ x: 123,y: 456 }`.
-- **Note:** At time of writing IE10 (and more than likely other browser vendors going forward) can/will return mouse coordinates with a sub-pixel resolution, therefore `getMousePosition()` will round down these values to whole numbers.
+- **Note:** At time of writing IE10 (and possibly other browser vendors going forward) can/will return mouse coordinates with a sub-pixel resolution, `getMousePosition()` will round down these down to whole pixel units.
 
 ### DOM
 
