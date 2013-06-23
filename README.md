@@ -158,7 +158,7 @@ Messages will only log when the mouse pointer enters/leaves `<div id="watchme">`
 #### $.Event.getMousePosition(event)
 - Returns the current mouse x/y pixel coordinates from the given `event`.
 - Data will be returned as an object with the structure of `{ x: 123,y: 456 }`.
-- **Note:** At time of writing IE10 (and possibly other browser vendors going forward) can/will return mouse coordinates with a sub-pixel resolution, `getMousePosition()` will round down these down to whole pixel units.
+- **Note:** At time of writing IE10 (and possibly other browser vendors going forward) can/will return mouse coordinates with a sub-pixel resolution, `getMousePosition()` will round down to whole pixel units.
 
 ### DOM
 
