@@ -131,11 +131,11 @@
 		method.getMousePosition = (realEventModel)
 			? function(event) {
 
-				// using Math.floor() as IE10 (and other vendors may follow in future) can/will report fractional coordinates due to sub-pixel rendering
+				// using Math.round() as IE10 (and other vendors may follow in future) can/will report fractional coordinates due to sub-pixel rendering
 				// http://blogs.msdn.com/b/ie/archive/2012/02/17/sub-pixel-rendering-and-the-css-object-model.aspx
 				return {
-					x: Math.floor(event.pageX || 0),
-					y: Math.floor(event.pageY || 0)
+					x: Math.round(event.pageX || 0),
+					y: Math.round(event.pageY || 0)
 				};
 			}
 			: function(event) {
@@ -359,7 +359,7 @@
 
 			// Internet Explorer < 9
 			if (!realEventModel) {
-				style.filter = 'alpha(opacity=' + Math.floor(opacity * 100) + ')';
+				style.filter = 'alpha(opacity=' + Math.round(opacity * 100) + ')';
 				style.zoom = 1; // trigger hasLayout
 			}
 		};
@@ -433,7 +433,7 @@
 				nextAnimId = 0,
 
 				classNameAnimActiveKey = ' cssanimactive cssanim',
-				classNameAnimIdRegExp = new RegExp(classNameAnimActiveKey + '(\\d+)( |$)'),
+				classNameAnimIdRegExp = new RegExp(classNameAnimActiveKey + '([0-9]+)( |$)'),
 				isOperaEventTypeRegExp = /^o(A|T)/;
 
 			function detect() {
