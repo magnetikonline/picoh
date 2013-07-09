@@ -1,5 +1,7 @@
 (function(win,doc,undefined) {
 
+	'use strict';
+
 	var	picoh = function(id) {
 
 			return doc.getElementById(id);
