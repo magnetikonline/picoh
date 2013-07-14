@@ -66,7 +66,13 @@
 	picoh.Event = function() {
 
 		var method = {},
-			eventList = [];
+			eventList = [],
+			reqAnimFrameNative =
+				win.requestAnimationFrame ||
+				win.mozRequestAnimationFrame ||
+				win.oRequestAnimationFrame ||
+				win.webkitRequestAnimationFrame,
+			reqAnimFrameFauxLastTime = 0;
 
 		method.add = eventAdd = (realEventModel)
 			? function(obj,type,handler) { obj.addEventListener(type,handler,false); }
@@ -153,6 +159,18 @@
 				}
 
 				return { x: 0,y: 0 };
+			};
+
+		method.reqAnimFrame = (reqAnimFrameNative !== undefined)
+			? function(handler) { reqAnimFrameNative(handler); }
+			: function(handler) {
+
+				// faux window.requestAnimationFrame() method
+				var curTime = new Date().getTime(),
+					timeToCall = Math.max(0,16 - (curTime - reqAnimFrameFauxLastTime));
+
+				setTimeout(handler,timeToCall);
+				reqAnimFrameFauxLastTime = curTime + timeToCall;
 			};
 
 		if (!realEventModel) {
