@@ -2,7 +2,8 @@
 
 	'use strict';
 
-	var	picoh = function(id) {
+	var	TRIM_REGEXP = /^\s+|\s+$/g,
+		picoh = function(id) {
 
 			return doc.getElementById(id);
 		},
@@ -14,8 +15,7 @@
 		isChildOf,hasClass,setOpacity,getPageScroll,
 
 		// if (realEventModel == false) then Internet Explorer < 9 event model used
-		realEventModel = !!win.addEventListener,
-		trimRegExp = /^\s+|\s+$/g;
+		realEventModel = !!win.addEventListener;
 
 	picoh.debounce = function(handler,delay) {
 
@@ -60,7 +60,7 @@
 
 	picoh.trim = trimString = function(value) {
 
-		return value.replace(trimRegExp,'');
+		return value.replace(TRIM_REGEXP,'');
 	};
 
 	picoh.Event = function() {
@@ -189,15 +189,13 @@
 
 	picoh.DOM = function() {
 
-		var method = {},
+		var READY_STATE_REGEXP = /^(loade|c)/,
+			DOM_CONTENT_LOADED_EVENT = 'DOMContentLoaded',
+			ON_READY_STATE_CHANGE_EVENT = 'onreadystatechange',
+			method = {},
 			hasClassRegExpCollection = {},
-
 			readyHandlerList,
-			readyStateRegExp = /^(loade|c)/,
-			DOMIsReady = readyStateRegExp.test(doc.readyState),
-
-			DOMContentLoadedEvent = 'DOMContentLoaded',
-			onReadyStateChangeEvent = 'onreadystatechange';
+			DOMIsReady = READY_STATE_REGEXP.test(doc.readyState);
 
 		// DOM querySelectorAll() method wrapper in global namespace
 		win.$$ = function() {
@@ -226,12 +224,12 @@
 			if (!readyHandlerList) {
 				// init events
 				if (realEventModel) {
-					eventAdd(doc,DOMContentLoadedEvent,readyHandler);
+					eventAdd(doc,DOM_CONTENT_LOADED_EVENT,readyHandler);
 					eventAdd(win,'load',readyHandler);
 
 				} else {
 					// Internet Explorer event model - but not via $.Event.add() to keep lightweight, 'this' correction/etc. is overkill here
-					doc.attachEvent(onReadyStateChangeEvent,readyHandler);
+					doc.attachEvent(ON_READY_STATE_CHANGE_EVENT,readyHandler);
 					win.attachEvent('onload',readyHandler);
 
 					// doScroll() hack for Internet Explorer < 9, (it should) fire earlier than 'onreadystatechange'
@@ -263,14 +261,14 @@
 
 		function readyHandler(event) {
 
-			if (realEventModel || DOMIsReady || (event.type == 'load') || (readyStateRegExp.test(doc.readyState))) {
+			if (realEventModel || DOMIsReady || (event.type == 'load') || (READY_STATE_REGEXP.test(doc.readyState))) {
 				// detach events
 				if (realEventModel) {
-					eventRemove(doc,DOMContentLoadedEvent,readyHandler);
+					eventRemove(doc,DOM_CONTENT_LOADED_EVENT,readyHandler);
 					eventRemove(win,'load',readyHandler);
 
 				} else {
-					doc.detachEvent(onReadyStateChangeEvent,readyHandler);
+					doc.detachEvent(ON_READY_STATE_CHANGE_EVENT,readyHandler);
 					win.detachEvent('onload',readyHandler);
 				}
 
@@ -335,38 +333,38 @@
 			while (el.firstChild) el.removeChild(el.firstChild);
 		};
 
-		method.hasClass = hasClass = function(el,name) {
+		method.hasClass = hasClass = function(el,name,className) {
 
 			return (
 				(hasClassRegExpCollection[name])
 					? hasClassRegExpCollection[name]
 					: hasClassRegExpCollection[name] = new RegExp('(^| )' + name + '( |$)')
-			).test((typeof el == 'string') ? el : el.className);
+			).test(className || el.className);
 		};
 
 		method.addClass = function(el,name) {
 
 			var classNameList = name.split(' '),
-				newClass = el.className;
+				newClassName = el.className;
 
 			while (classNameList.length) {
-				var className = classNameList.shift();
-				if (!hasClass(newClass,className)) newClass += ' ' + className;
+				var className = classNameList.pop();
+				if (!hasClass(0,className,newClassName)) newClassName += ' ' + className;
 			}
 
-			el.className = trimString(newClass);
+			el.className = trimString(newClassName);
 		};
 
 		method.removeClass = function(el,name) {
 
 			var classNameList = name.split(' '),
-				newClass = ' ' + el.className + ' ';
+				newClassName = ' ' + el.className + ' ';
 
 			while (classNameList.length) {
-				newClass = newClass.replace(' ' + classNameList.pop() + ' ',' ');
+				newClassName = newClassName.replace(' ' + classNameList.pop() + ' ',' ');
 			}
 
-			el.className = trimString(newClass);
+			el.className = trimString(newClassName);
 		};
 
 		method.setOpacity = setOpacity = function(el,opacity) {
@@ -442,7 +440,10 @@
 
 		method.Anim = function() {
 
-			var method = {},
+			var CLASS_NAME_ANIM_ACTIVE_KEY = ' cssanimactive cssanim',
+				CLASS_NAME_ANIMID_REGEXP = new RegExp(CLASS_NAME_ANIM_ACTIVE_KEY + '([0-9]+)( |$)'),
+				IS_OPERA_EVENT_TYPE_REGEXP = /^o(A|T)/,
+				method = {},
 				isDetected,
 				animationSupport,
 				animationEventTypeEnd,
@@ -450,11 +451,7 @@
 				transitionSupport,
 				transitionEventTypeEnd,
 				transitionEndHandlerCollection,
-				nextAnimId = 0,
-
-				classNameAnimActiveKey = ' cssanimactive cssanim',
-				classNameAnimIdRegExp = new RegExp(classNameAnimActiveKey + '([0-9]+)( |$)'),
-				isOperaEventTypeRegExp = /^o(A|T)/;
+				nextAnimId = 0;
 
 			function detect() {
 
@@ -464,13 +461,13 @@
 
 				// collection of animation/transition style properties per browser engine and matching DOM events
 				// non-prefixed properties are intentionally checked first
-				var animationDetectList = [
+				var ANIMATION_DETECT_LIST = [
 						['animation','animationend'],
 						['MozAnimation','mozAnimationEnd'],
 						['OAnimation','oAnimationEnd'],
 						['webkitAnimation','webkitAnimationEnd']
 					],
-					transitionDetectList = [
+					TRANSITION_DETECT_LIST = [
 						['transition','transitionend'],
 						['MozTransition','mozTransitionEnd'],
 						['OTransition','oTransitionEnd'],
@@ -489,14 +486,14 @@
 				}
 
 				// animation support
-				detectHandle(animationDetectList,function(item) {
+				detectHandle(ANIMATION_DETECT_LIST,function(item) {
 
 					animationSupport = true;
 					animationEventTypeEnd = item;
 				});
 
 				// transition support
-				detectHandle(transitionDetectList,function(item) {
+				detectHandle(TRANSITION_DETECT_LIST,function(item) {
 
 					transitionSupport = true;
 					transitionEventTypeEnd = item;
@@ -506,7 +503,7 @@
 			function addDocElEvent(type,handler) {
 
 				docEl.addEventListener(type,handler,false);
-				if (isOperaEventTypeRegExp.test(type)) {
+				if (IS_OPERA_EVENT_TYPE_REGEXP.test(type)) {
 					// some earlier versions of Opera (Presto) need lowercased event names
 					docEl.addEventListener(type.toLowerCase(),handler,false);
 				}
@@ -515,7 +512,7 @@
 			function getElAnimId(el) {
 
 				// look for animation ID class identifier
-				var match = classNameAnimIdRegExp.exec(' ' + el.className);
+				var match = CLASS_NAME_ANIMID_REGEXP.exec(' ' + el.className);
 				return (match) ? (match[1] * 1) : false; // cast as integer
 			}
 
@@ -524,7 +521,7 @@
 				// remove animation ID class identifer from element
 				el.className = trimString(
 					(' ' + el.className + ' ').
-					replace(classNameAnimActiveKey + animId + ' ',' ')
+					replace(CLASS_NAME_ANIM_ACTIVE_KEY + animId + ' ',' ')
 				);
 			}
 
@@ -573,7 +570,7 @@
 					removeAnimItem(handlerCollection,el);
 
 					// add animation ID class identifer to element
-					el.className = trimString(el.className + classNameAnimActiveKey + nextAnimId);
+					el.className = trimString(el.className + CLASS_NAME_ANIM_ACTIVE_KEY + nextAnimId);
 
 					// add item to handler collection
 					handlerCollection[nextAnimId++] = [handler,el,data];
