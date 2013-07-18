@@ -29,7 +29,7 @@
 		debounce.clear = function() {
 
 			if (timeout) clearTimeout(timeout);
-			timeout = false;
+			timeout = undefined;
 		};
 
 		return debounce;
