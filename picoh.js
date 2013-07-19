@@ -313,6 +313,23 @@
 			refEl.parentNode.insertBefore(el,refEl.nextSibling);
 		};
 
+		method.replace = function(el,oldEl) {
+
+			// return oldEl
+			return oldEl.parentNode.replaceChild(el,oldEl);
+		};
+
+		method.remove = function(el) {
+
+			// return el
+			return el.parentNode.removeChild(el);
+		};
+
+		method.removeChildAll = function(el) {
+
+			while (el.firstChild) el.removeChild(el.firstChild);
+		};
+
 		method.isChildOf = isChildOf = function(parentEl,childEl) {
 
 			if (!childEl) return false;
@@ -320,17 +337,6 @@
 
 			// call isChildOf() recursively
 			return isChildOf(parentEl,childEl.parentNode);
-		};
-
-		method.replace = function(el,oldEl) {
-
-			// return oldEl
-			return oldEl.parentNode.replaceChild(el,oldEl);
-		};
-
-		method.removeChildAll = function(el) {
-
-			while (el.firstChild) el.removeChild(el.firstChild);
 		};
 
 		method.hasClass = hasClass = function(el,name,className) {
@@ -442,7 +448,7 @@
 
 			var CLASS_NAME_ANIM_ACTIVE_KEY = ' cssanimactive cssanim',
 				CLASS_NAME_ANIMID_REGEXP = new RegExp(CLASS_NAME_ANIM_ACTIVE_KEY + '([0-9]+)( |$)'),
-				IS_OPERA_EVENT_TYPE_REGEXP = /^o(A|T)/,
+				IS_OPERA_EVENT_TYPE_REGEXP = /^o[AT]/,
 				method = {},
 				isDetected,
 				animationSupport,
