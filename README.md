@@ -181,10 +181,8 @@ Messages will only log when the mouse pointer enters/leaves `<div id="watchme">`
 
 #### $.DOM.create(name[,attributeList][,childElementList])
 - Creates a new DOM element with the given tagname `name`.
-- Optional attributes given as a key/value object `attributeList`. Keys are to be given as DOM Element properties, a few will be converted from their HTML names automatically:
-	- `class` will be injected as `className`
-	- `colspan` injected as `colSpan`
-	- `for` injected as `htmlFor`
+- Optional attributes given as a key/value object `attributeList`.
+	- Keys are to be given as DOM element properties (e.g. `class="myclass"` as `{ className: 'myclass' }`.
 - Optional child DOM elements automatically appended given as an array `childElementList`.
 	- Child elements given as strings will be appended as a DOM `TextNode`.
 
@@ -192,7 +190,7 @@ Example usage:
 
 ```js
 var myCreatedDOMEl = $.DOM.create(
-	'div',{ 'class': 'myclass' },
+	'div',{ className: 'myclass' },
 	[
 		$.DOM.create('span',false,['My span text']),
 		$.DOM.create('a',{ href: '/link/to/item' },['Click me']),
