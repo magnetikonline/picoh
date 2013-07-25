@@ -115,7 +115,7 @@
 			var el = event.target || event.srcElement;
 
 			// defeat Safari browser bug (target element should not be a text node)
-			return (el.nodeType == 3) ? el.parentNode : el;
+			return (el && (el.nodeType == 3)) ? el.parentNode : el;
 		};
 
 		method.getRelatedTarget = getRelatedTarget = (realEventModel)
@@ -125,7 +125,7 @@
 				// Internet Explorer relatedTarget
 				return (event.type == 'mouseover')
 					? event.fromElement
-					: ((event.type == 'mouseout') ? event.toElement : null);
+					: ((event.type == 'mouseout') ? event.toElement : undefined);
 			};
 
 		method.isMouseEnterLeave = function(event,el) {
@@ -284,12 +284,7 @@
 
 			if (attributeList) {
 				for (var index in attributeList) {
-					var value = attributeList[index];
-					if (index == 'class') index = 'className';
-					if (index == 'colspan') index = 'colSpan';
-					if (index == 'for') index = 'htmlFor';
-
-					createEl[index] = value;
+					createEl[index] = attributeList[index];
 				}
 			}
 
@@ -422,9 +417,10 @@
 
 		method.getPageScroll = getPageScroll = function() {
 
+			// docEl.scrollLeft/docEl.scrollTop for IE10 and below
 			return {
-				x: win.pageXOffset || docEl.scrollLeft || 0,
-				y: win.pageYOffset || docEl.scrollTop || 0
+				x: win.scrollX || docEl.scrollLeft || 0,
+				y: win.scrollY || docEl.scrollTop || 0
 			};
 		};
 
@@ -625,7 +621,7 @@
 		return method;
 	}();
 
-	picoh.request = function() {
+	picoh.request = (function() {
 
 		function buildParameters(list) {
 
@@ -676,7 +672,7 @@
 					xhr.onreadystatechange = function() {
 
 						if (xhr.readyState == 4) {
-							var isOk = (xhr.status >= 200) && (xhr.status < 300);
+							var isOk = ((xhr.status >= 200) && (xhr.status < 300));
 
 							handler({
 								ok: isOk,
@@ -697,7 +693,7 @@
 				return true;
 			}
 		};
-	}();
+	})();
 
 	win.$ = picoh;
 })(window,document);
