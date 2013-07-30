@@ -192,6 +192,7 @@
 		var READY_STATE_REGEXP = /^(loade|c)/,
 			DOM_CONTENT_LOADED_EVENT = 'DOMContentLoaded',
 			ON_READY_STATE_CHANGE_EVENT = 'onreadystatechange',
+			IE_DOM_SCROLL_CHECK_DELAY = 50,
 			method = {},
 			hasClassRegExpCollection = {},
 			readyHandlerList,
@@ -242,7 +243,7 @@
 									docEl.doScroll('left');
 
 								} catch(e) {
-									return setTimeout(doScrollCheck,50);
+									return setTimeout(doScrollCheck,IE_DOM_SCROLL_CHECK_DELAY);
 								}
 
 								DOMIsReady = true;
