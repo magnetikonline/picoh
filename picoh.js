@@ -201,11 +201,11 @@
 		// DOM querySelectorAll() method wrapper in global namespace
 		win.$$ = function() {
 
-			var elList = [],
-				elGiven = (arguments.length == 2);
+			var elList = [];
 
 			if (doc.querySelectorAll) {
-				var nodeList = ((elGiven) ? arguments[0] : doc).querySelectorAll(arguments[(elGiven) ? 1 : 0]);
+				var elGiven = (arguments.length - 1),
+					nodeList = ((elGiven) ? arguments[0] : doc).querySelectorAll(arguments[elGiven]);
 
 				// convert returned nodeList to an array
 				for (var index = 0,nodeItem;nodeItem = nodeList[index];index++) {
@@ -637,21 +637,21 @@
 			}
 		}
 
-		function parseJSON(JSONtext) {
+		function parseJSON(responseText) {
 
 			var JSONdata = {};
 
 			if (win.JSON) {
 				// if text starts/ends with '{' and '}' then assume it's JSON data
-				JSONtext = trimString(JSONtext);
+				responseText = trimString(responseText);
 
 				if (
-					(JSONtext.slice(0,1) == '{') &&
-					(JSONtext.slice(-1) == '}')
+					(responseText.slice(0,1) == '{') &&
+					(responseText.slice(-1) == '}')
 				) {
 					// attempt to parse
 					try {
-						JSONdata = JSON.parse(JSONtext);
+						JSONdata = JSON.parse(responseText);
 					} catch(e) {}
 				}
 			}
