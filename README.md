@@ -161,7 +161,7 @@ Messages will only log when the mouse pointer enters/leaves `<div id="watchme">`
 - **Note:** At time of writing IE10 (and possibly other browser vendors going forward) can/will return mouse coordinates with a sub-pixel resolution, `getMousePosition()` will round down to whole pixel units.
 
 #### $.Event.reqAnimFrame(handler)
-- Wrapper for `window.requestAnimationFrame`, a more efficient method of running animation routines versus the traditional `window.setTimeout()` method.
+- Wrapper for `window.requestAnimationFrame`, a more efficient method of processing animation frames versus traditional `window.setTimeout()` use.
 - Handles cross browser API prefixing between browser vendors.
 - A fallback `window.setTimeout()` polyfill is provided for unsupported browsers which will be called approximately once every 16ms to give a *close to* 60fps fire rate.
 

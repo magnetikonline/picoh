@@ -2,7 +2,7 @@
 
 	'use strict';
 
-	var	TRIM_REGEXP = /^\s+|\s+$/g,
+	var TRIM_REGEXP = /^\s+|\s+$/g,
 		picoh = function(id) {
 
 			return doc.getElementById(id);
@@ -79,14 +79,10 @@
 			: function(obj,type,handler) {
 
 				// Internet Explorer < 9 event handler
-				// - fix 'this' upon event call
+				// - fix 'this' upon event handler call
 				// - event tracking [eventList] for leaky memory cleanup upon document unload
-				var typeHandler = type + handler,
-					eventName = 'e' + typeHandler;
-
-				obj[eventName] = handler;
-				obj[typeHandler] = function(event) { return obj[eventName](event); };
-				obj.attachEvent('on' + type,obj[typeHandler]);
+				obj[type + handler] = function(event) { handler.call(obj,event); };
+				obj.attachEvent('on' + type,obj[type + handler]);
 				eventList.push([obj,type,handler]);
 			};
 
@@ -94,11 +90,9 @@
 			? function(obj,type,handler) { obj.removeEventListener(type,handler,false); }
 			: function(obj,type,handler) {
 
-				// Internet Explorer - basically reverse steps in Event.add() - null out things to release memory (we hope - this is IE after all)
-				var typeHandler = type + handler;
-				obj.detachEvent('on' + type,obj[typeHandler]);
-				obj[typeHandler] = null;
-				obj['e' + typeHandler] = null;
+				// Internet Explorer < 9 - reverse steps in Event.add() and unassociate handler wrapper to release memory (we hope - this is IE after all)
+				obj.detachEvent('on' + type,obj[type + handler]);
+				delete obj[type + handler];
 			};
 
 		method.preventDefault = (realEventModel)
