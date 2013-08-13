@@ -92,7 +92,7 @@
 
 				// Internet Explorer < 9 - reverse steps in Event.add() and unassociate handler wrapper to release memory (we hope - this is IE after all)
 				obj.detachEvent('on' + type,obj[type + handler]);
-				delete obj[type + handler];
+				obj[type + handler] = null;
 			};
 
 		method.preventDefault = (realEventModel)
