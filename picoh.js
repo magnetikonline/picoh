@@ -119,7 +119,7 @@
 				// Internet Explorer relatedTarget
 				return (event.type == 'mouseover')
 					? event.fromElement
-					: ((event.type == 'mouseout') ? event.toElement : undefined);
+					: ((event.type == 'mouseout') ? event.toElement : null);
 			};
 
 		method.isMouseEnterLeave = function(event,el) {
