@@ -618,6 +618,8 @@
 
 	picoh.request = (function() {
 
+		var REQUEST_HEADER_CONTENT_TYPE_POST = 'application/x-www-form-urlencoded';
+
 		function buildParameters(list) {
 
 			if (list) {
@@ -667,20 +669,21 @@
 					xhr.onreadystatechange = function() {
 
 						if (xhr.readyState == 4) {
-							var isOk = ((xhr.status >= 200) && (xhr.status < 300));
+							var isOk = ((xhr.status >= 200) && (xhr.status < 300)),
+								responseText = xhr.responseText;
 
 							handler({
 								ok: isOk,
 								status: xhr.status,
-								text: (isOk) ? xhr.responseText : '',
-								JSON: (isOk) ? parseJSON(xhr.responseText) : {}
+								text: (isOk) ? responseText : '',
+								JSON: (isOk) ? parseJSON(responseText) : {}
 							});
 						}
 					};
 				}
 
 				if (isPost && parameters) {
-					xhr.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+					xhr.setRequestHeader('Content-type',REQUEST_HEADER_CONTENT_TYPE_POST);
 				}
 
 				// send request and return success
