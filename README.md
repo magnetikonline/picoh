@@ -300,7 +300,7 @@ For the background behind these methods and their uses you can refer to my [cssa
 - Optional `data` can be given, which will be passed to `handler` upon execution as a second parameter.
 
 #### $.DOM.Anim.cancelAnimationEnd(element)
-Cancel a pending handler assigned to `element` by a previous call to `onAnimationEnd()`.
+Cancel a pending handler assigned to `element` by a previous call to `$.DOM.Anim.onAnimationEnd()`.
 
 #### $.DOM.Anim.onTransitionEnd(element,handler[,data])
 Identical in functionality to `$.DOM.Anim.onAnimationEnd()`, but for CSS3 transitions.
