@@ -410,14 +410,22 @@
 			};
 		};
 
-		method.getPageScroll = getPageScroll = function() {
+		method.getPageScroll = getPageScroll = (win.pageXOffset !== undefined)
+			? function() {
 
-			// docEl.scrollLeft/docEl.scrollTop for IE10 and below
-			return {
-				x: win.scrollX || docEl.scrollLeft || 0,
-				y: win.scrollY || docEl.scrollTop || 0
+				return {
+					x: win.pageXOffset,
+					y: win.pageYOffset
+				};
+			}
+			: function() {
+
+				// Internet Explorer < 9
+				return {
+					x: docEl.scrollLeft || 0,
+					y: docEl.scrollTop || 0
+				};
 			};
-		};
 
 		method.getViewportSize = function() {
 
