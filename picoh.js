@@ -22,13 +22,13 @@
 		var timeout,
 			debounce = function() {
 
-				if (timeout) clearTimeout(timeout);
+				if (timeout !== undefined) clearTimeout(timeout);
 				timeout = setTimeout(handler,delay);
 			};
 
 		debounce.clear = function() {
 
-			if (timeout) clearTimeout(timeout);
+			if (timeout !== undefined) clearTimeout(timeout);
 			timeout = undefined;
 		};
 
@@ -331,11 +331,13 @@
 
 		method.hasClass = hasClass = function(el,name,className) {
 
+			if (className === undefined) className = el.className;
+
 			return (
 				(hasClassRegExpCollection[name])
 					? hasClassRegExpCollection[name]
 					: hasClassRegExpCollection[name] = RegExp('(^| )' + name + '( |$)')
-			).test(className || el.className);
+			).test(className);
 		};
 
 		method.addClass = function(el,name) {
@@ -345,7 +347,7 @@
 
 			while (classNameList.length) {
 				var className = classNameList.pop();
-				if (!hasClass(0,className,newClassName)) newClassName += ' ' + className;
+				if (!hasClass(undefined,className,newClassName)) newClassName += ' ' + className;
 			}
 
 			el.className = trimString(newClassName);
