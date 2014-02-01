@@ -122,7 +122,7 @@ Returns the DOM element that the given `event` was dispatched on.
 Returns the secondary DOM element for the given `event`, only useful for the mouse events `mouseover` and `mouseout`.
 
 #### $.Event.isMouseEnterLeave(event,element)
-Emulates behaviour of the mighty handy and IE only event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
+Emulates behaviour of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ also now support) event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
 
 Example usage:
 
@@ -153,7 +153,7 @@ $.Event.add(watchMeEl,'mouseover',mouseEnterHandler);
 $.Event.add(watchMeEl,'mouseout',mouseLeaveHandler);
 ```
 
-Messages will only log when the mouse pointer enters/leaves `<div id="watchme">`, ignoring events fired when entering/leaving the child `<span>` DOM elements.
+Messages will only log when mouse pointer *enters* or *leaves* the `<div id="watchme">` DOM element, ignoring all mouseover/mouseout events fired when entering/leaving child `<span>` elements.
 
 #### $.Event.getMousePosition(event)
 - Returns the current mouse x/y pixel coordinates from the given `event`.
@@ -223,9 +223,6 @@ Remove the given `element` from the DOM, returning `element`.
 
 #### $.DOM.removeChildAll(element)
 Remove all child DOM elements from given `element`.
-
-#### $.DOM.isChildOf(parentElement,childElement)
-Returns `true` if the given `childElement` is a child (either direct or descendant) of `parentElement`, otherwise return `false`.
 
 #### $.DOM.hasClass(element,name)
 Returns `true` if `element` has the given CSS class `name` assigned, otherwise return `false`.
