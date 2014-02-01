@@ -8,11 +8,11 @@
 			return doc.getElementById(id);
 		},
 
-		// picoh.trim(),picoh.Event.add()/remove()/getRelatedTarget(),picoh.DOM.isChildOf()/hasClass()/setOpacity()/getPageScroll() aliases for minification
+		// picoh.trim(),picoh.Event.add()/remove()/getRelatedTarget(),picoh.DOM.hasClass()/setOpacity()/getPageScroll() aliases for minification
 		docEl = doc.documentElement,
 		trimString,
 		eventAdd,eventRemove,getRelatedTarget,
-		isChildOf,hasClass,setOpacity,getPageScroll,
+		hasClass,setOpacity,getPageScroll,
 
 		// if (realEventModel == false) then Internet Explorer < 9 event model used
 		realEventModel = !!win.addEventListener;
@@ -124,8 +124,7 @@
 
 		method.isMouseEnterLeave = function(event,el) {
 
-			var relEl = getRelatedTarget(event);
-			return !(!relEl || isChildOf(el,relEl));
+			return !el.contains(getRelatedTarget(event));
 		};
 
 		// getMousePosition() returns the mouse position relative to the document, not the browser viewport
@@ -318,15 +317,6 @@
 		method.removeChildAll = function(el) {
 
 			while (el.firstChild) el.removeChild(el.firstChild);
-		};
-
-		method.isChildOf = isChildOf = function(parentEl,childEl) {
-
-			if (!childEl) return false;
-			if (parentEl == childEl) return true;
-
-			// call isChildOf() recursively
-			return isChildOf(parentEl,childEl.parentNode);
 		};
 
 		method.hasClass = hasClass = function(el,name,className) {
