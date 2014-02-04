@@ -43,7 +43,7 @@
 			(collection instanceof Array) ||
 			((collection.item !== undefined) && (collection.length !== undefined))
 		) {
-			// collection is an array or DOM HtmlCollection/NodeList (using Duck typing for this test, should be reliable)
+			// collection is an array or DOM HtmlCollection/NodeList (duck typing)
 			for (var length = collection.length;index < length;index++) {
 				// if handler returns false, bail early
 				if (handler(collection[index],index) === false) return;
@@ -200,9 +200,9 @@
 				var elGiven = (arguments.length - 1),
 					nodeList = ((elGiven) ? arguments[0] : doc).querySelectorAll(arguments[elGiven]);
 
-				// convert returned nodeList to an array
-				for (var index = 0,nodeItem;nodeItem = nodeList[index];index++) {
-					elList.push(nodeItem);
+				// convert nodeList to an array
+				for (var index = 0,length = nodeList.length;index < length;index++) {
+					elList.push(nodeList[index]);
 				}
 			}
 
@@ -509,8 +509,8 @@
 
 				var seekList = handlerList[handlerIndex];
 				if (seekList !== undefined) {
-					for (var index = 0,handlerItem;handlerItem = seekList[index];index++) {
-						if (handlerItem[0] == el) {
+					for (var index = seekList.length - 1;index >= 0;index--) {
+						if (seekList[index][0] == el) {
 							// found element in handler list
 							return index;
 						}
