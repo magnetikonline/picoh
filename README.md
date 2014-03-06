@@ -216,13 +216,13 @@ Insert the given `element` before `referenceElement` within the current document
 Insert the given `element` after `referenceElement` within the current document.
 
 #### $.DOM.replace(element,oldElement)
-Replace the given `oldElement` within the current document with `element`, returning `oldElement`.
+Replace the given `oldElement` within the current document with `element`. Returns `oldElement`.
 
 #### $.DOM.remove(element)
 Remove the given `element` from the DOM, returning `element`.
 
 #### $.DOM.removeChildAll(element)
-Remove all child DOM elements from given `element`.
+Remove all child DOM elements from the given `element`.
 
 #### $.DOM.hasClass(element,name)
 Returns `true` if `element` has the given CSS class `name` assigned, otherwise return `false`.
