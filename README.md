@@ -270,6 +270,10 @@ $.DOM.setStyle(
 */
 ```
 
+#### $.DOM.getData(element,key)
+- Returns the value of the [HTML5 data attribute](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Using_data_attributes) `key` associated to `element`.
+- If the given `key` does not exist returns `null`.
+
 #### $.DOM.getOffset(element[,toParent])
 - Returns the left/top pixel offset of the given `element` to either the top left corner of the document, or if `toParent` is provided and set `true`, to the element's parent.
 - Data will be returned as an object with the structure of `{ left: 123,top: 456 }`.

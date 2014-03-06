@@ -383,6 +383,11 @@
 			}
 		};
 
+		method.getData = function(el,key) {
+
+			return el.getAttribute('data-' + key);
+		};
+
 		method.getOffset = function(el,toParent) {
 
 			var left = 0,
