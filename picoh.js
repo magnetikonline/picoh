@@ -236,9 +236,11 @@
 									docEl.doScroll('left');
 
 								} catch(e) {
+									// call to docEl.doScroll() failed, lets try again after delay
 									return setTimeout(doScrollCheck,IE_DOM_SCROLL_CHECK_DELAY);
 								}
 
+								// docEl.doScroll() success, DOM is now ready
 								DOMIsReady = true;
 								readyHandler();
 							}
