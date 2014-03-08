@@ -3,12 +3,19 @@
 	'use strict';
 
 	var TRIM_REGEXP = /^\s+|\s+$/g,
+		REQUEST_ANIMATION_FRAME_FAUX_DELAY = 16,
+		reqAnimFrameNative =
+			win.requestAnimationFrame ||
+			win.mozRequestAnimationFrame ||
+			win.webkitRequestAnimationFrame,
+		reqAnimFrameFauxLastTime = 0,
 		picoh = function(id) {
 
 			return doc.getElementById(id);
 		},
 
-		// picoh.trim(),picoh.Event.add()/remove()/getRelatedTarget(),picoh.DOM.hasClass()/setOpacity()/getPageScroll() aliases for minification
+		// document.documentElement,picoh.trim(),picoh.Event.add()/remove()/getRelatedTarget(),
+		// picoh.DOM.hasClass()/setOpacity()/getPageScroll() aliases for minification
 		docEl = doc.documentElement,
 		trimString,
 		eventAdd,eventRemove,getRelatedTarget,
@@ -63,16 +70,23 @@
 		return value.replace(TRIM_REGEXP,'');
 	};
 
+	picoh.reqAnimFrame = (reqAnimFrameNative !== undefined)
+		? function(handler) { reqAnimFrameNative(handler); }
+		: function(handler) {
+
+			// faux window.requestAnimationFrame() method
+			// call approximately every REQUEST_ANIMATION_FRAME_FAUX_DELAY milliseconds
+			var curTime = new Date().getTime(),
+				timeToCall = Math.max(0,REQUEST_ANIMATION_FRAME_FAUX_DELAY - (curTime - reqAnimFrameFauxLastTime));
+
+			setTimeout(handler,timeToCall);
+			reqAnimFrameFauxLastTime = curTime + timeToCall;
+		};
+
 	picoh.Event = function() {
 
 		var method = {},
-			eventList = [],
-			reqAnimFrameNative =
-				win.requestAnimationFrame ||
-				win.mozRequestAnimationFrame ||
-				win.oRequestAnimationFrame ||
-				win.webkitRequestAnimationFrame,
-			reqAnimFrameFauxLastTime = 0;
+			eventList = [];
 
 		method.add = eventAdd = (realEventModel)
 			? function(obj,type,handler) { obj.addEventListener(type,handler,false); }
@@ -152,18 +166,6 @@
 				}
 
 				return { x: 0,y: 0 };
-			};
-
-		method.reqAnimFrame = (reqAnimFrameNative !== undefined)
-			? function(handler) { reqAnimFrameNative(handler); }
-			: function(handler) {
-
-				// faux window.requestAnimationFrame() method
-				var curTime = new Date().getTime(),
-					timeToCall = Math.max(0,16 - (curTime - reqAnimFrameFauxLastTime));
-
-				setTimeout(handler,timeToCall);
-				reqAnimFrameFauxLastTime = curTime + timeToCall;
 			};
 
 		if (!realEventModel) {

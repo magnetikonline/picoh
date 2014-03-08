@@ -83,6 +83,11 @@ $.each(myObject,myHandler);
 #### $.trim(string)
 Trim leading/trailing whitespace from the given `string` and return the result.
 
+#### $.reqAnimFrame(handler)
+- Wrapper for `window.requestAnimationFrame`, a more efficient method of processing animation frames versus traditional `window.setTimeout()` use.
+- Handles cross browser API prefixing between browser vendors.
+- A fallback `window.setTimeout()` polyfill is provided for unsupported browsers which will be called approximately once every 16ms to give a *close to* 60fps fire rate.
+
 #### *Has JavaScript?* CSS class hook
 - Not a method per se, but placing an attribute of `<html class="nojs">` on a document's `<html>` element will be automatically replaced with `<html class="js">` upon load of the library.
 - Used as a CSS styling hook for no/has JavaScript scenarios.
@@ -122,9 +127,9 @@ Returns the DOM element that the given `event` was dispatched on.
 Returns the secondary DOM element for the given `event`, only useful for the mouse events `mouseover` and `mouseout`.
 
 #### $.Event.isMouseEnterLeave(event,element)
-Emulates behaviour of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ also now support) event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
+Emulates behaviour of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ now also natively support) event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
 
-Example usage:
+Example:
 
 ```html
 <div id="watchme">
@@ -153,17 +158,12 @@ $.Event.add(watchMeEl,'mouseover',mouseEnterHandler);
 $.Event.add(watchMeEl,'mouseout',mouseLeaveHandler);
 ```
 
-Messages will only log when mouse pointer *enters* or *leaves* the `<div id="watchme">` DOM element, ignoring all mouseover/mouseout events fired when entering/leaving child `<span>` elements.
+With above example messages will only log when mouse pointer *enters* or *leaves* `<div id="watchme">`, ignoring all mouseover/mouseout events fired when entering/leaving child `<span>` elements.
 
 #### $.Event.getMousePosition(event)
 - Returns the current mouse x/y pixel coordinates from the given `event`.
 - Data will be returned as an object with the structure of `{ x: 123,y: 456 }`.
 - **Note:** At time of writing IE10 (and possibly other browser vendors going forward) can/will return mouse coordinates with a sub-pixel resolution, `getMousePosition()` will round down to whole pixel units.
-
-#### $.Event.reqAnimFrame(handler)
-- Wrapper for `window.requestAnimationFrame`, a more efficient method of processing animation frames versus traditional `window.setTimeout()` use.
-- Handles cross browser API prefixing between browser vendors.
-- A fallback `window.setTimeout()` polyfill is provided for unsupported browsers which will be called approximately once every 16ms to give a *close to* 60fps fire rate.
 
 ### DOM
 
@@ -295,7 +295,7 @@ $.DOM.setStyle(
 For the background behind these methods and their uses you can refer to my [cssanimevent](https://github.com/magnetikonline/cssanimevent) JavaScript library. The following methods have been lifted and integrated from here.
 
 #### $.DOM.Anim.onAnimationEnd(element,handler[,data])
-- Calls the given `handler` upon completion of a CSS3 animation applied to `element`. Lifetime of the callback will be for exactly *one* animation end event only.
+- Calls the given `handler` upon completion of a CSS3 animation applied to `element`. Lifetime of the handler will be for exactly *one* animation end event only.
 - For browsers that do not support CSS3 animations, `handler` will be called instantaneously.
 - Handler will be passed a reference to `element` when called.
 - Optional `data` can be given, which will be passed to `handler` upon execution as a second parameter.
