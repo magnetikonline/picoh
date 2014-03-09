@@ -541,10 +541,10 @@
 
 			function addDocElEvent(type,handler) {
 
-				docEl.addEventListener(type,handler,false);
+				eventAdd(docEl,type,handler);
 				if (IS_OPERA_EVENT_TYPE_REGEXP.test(type)) {
 					// some earlier versions of Opera (Presto) need lowercased event names
-					docEl.addEventListener(type.toLowerCase(),handler,false);
+					eventAdd(docEl,type.toLowerCase(),handler);
 				}
 			}
 
