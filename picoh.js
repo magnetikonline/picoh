@@ -3,26 +3,31 @@
 	'use strict';
 
 	var TRIM_REGEXP = /^\s+|\s+$/g,
+		NEXT_TICK_MESSAGE_NAME = 'picoh-tick',
 		REQUEST_ANIMATION_FRAME_FAUX_DELAY = 16,
-		reqAnimFrameNative =
-			win.requestAnimationFrame ||
-			win.mozRequestAnimationFrame ||
-			win.webkitRequestAnimationFrame,
-		reqAnimFrameFauxLastTime = 0,
 		picoh = function(id) {
 
 			return doc.getElementById(id);
 		},
 
-		// document.documentElement,picoh.trim(),picoh.Event.add()/remove()/getRelatedTarget(),
-		// picoh.DOM.hasClass()/setOpacity()/getPageScroll() aliases for minification
+		// aliases for minification:
+		// - document.documentElement,picoh.trim()
+		// - picoh.Event.add()/remove()/stopPropagation()/getRelatedTarget(),
+		// - picoh.DOM.hasClass()/setOpacity()/getPageScroll()
 		docEl = doc.documentElement,
 		trimString,
-		eventAdd,eventRemove,getRelatedTarget,
+		eventAdd,eventRemove,stopPropagation,getRelatedTarget,
 		hasClass,setOpacity,getPageScroll,
 
 		// if (realEventModel == false) then Internet Explorer < 9 event model used
-		realEventModel = !!win.addEventListener;
+		realEventModel = !!win.addEventListener,
+
+		nextTickHandlerList = [],
+		reqAnimFrameNative =
+			win.requestAnimationFrame ||
+			win.mozRequestAnimationFrame ||
+			win.webkitRequestAnimationFrame,
+		reqAnimFrameFauxLastTime = 0;
 
 	picoh.debounce = function(handler,delay) {
 
@@ -70,6 +75,35 @@
 		return value.replace(TRIM_REGEXP,'');
 	};
 
+	picoh.nextTick = (realEventModel)
+		? (function() {
+
+			// setup message handler function
+			win.addEventListener(
+				'message',
+				function(event) {
+
+					if ((event.source == win) && (event.data == NEXT_TICK_MESSAGE_NAME)) {
+						stopPropagation(event);
+						if (nextTickHandlerList.length) nextTickHandlerList.shift()();
+					}
+				},
+				true // note: using capture here
+			);
+
+			return function(handler) {
+
+				// add handler to next tick stack and post message
+				nextTickHandlerList.push(handler);
+				win.postMessage(NEXT_TICK_MESSAGE_NAME,'*');
+			};
+		})()
+		: function(handler) {
+
+			// unable to use postMessage() successfully with IE8 (it's handled synchronously) - so fallback to setTimeout()
+			setTimeout(handler);
+		};
+
 	picoh.reqAnimFrame = (reqAnimFrameNative !== undefined)
 		? function(handler) { reqAnimFrameNative(handler); }
 		: function(handler) {
@@ -113,7 +147,7 @@
 			? function(event) { event.preventDefault(); }
 			: function(event) { event.returnValue = false; };
 
-		method.stopPropagation = (realEventModel)
+		method.stopPropagation = stopPropagation = (realEventModel)
 			? function(event) { event.stopPropagation(); }
 			: function(event) { event.cancelBubble = true; };
 

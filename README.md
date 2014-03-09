@@ -83,6 +83,11 @@ $.each(myObject,myHandler);
 #### $.trim(string)
 Trim leading/trailing whitespace from the given `string` and return the result.
 
+#### $.nextTick(handler)
+- Emulation of Node.js's [process.nextTick()](http://nodejs.org/api/process.html#process_process_nexttick_callback) for the browser.
+- Produces a faster and [more efficient](http://dbaron.org/log/20100309-faster-timeouts) callback on the next event loop vs. `window.setTimeout(function() {},0)`.
+- Implemented using `window.postMessage()` under the hood, falling back to `window.setTimeout()` for IE8 (which does support `window.postMessage()` but sadly operates synchronously).
+
 #### $.reqAnimFrame(handler)
 - Wrapper for `window.requestAnimationFrame`, a more efficient method of processing animation frames versus traditional `window.setTimeout()` use.
 - Handles cross browser API prefixing between browser vendors.
@@ -180,7 +185,7 @@ With above example messages will only log when mouse pointer *enters* or *leaves
 - Based upon the standalone DOM ready method presented in the following [gist](https://gist.github.com/magnetikonline/5270265).
 
 #### $.DOM.create(name[,attributeList][,childElementList])
-- Creates a new DOM element with the given tagname `name`.
+- Creates a new DOM element with the given node name `name`.
 - Optional attributes given as a key/value object `attributeList`.
 	- Keys are to be given as DOM element properties (e.g. `class="myclass"` as `{ className: 'myclass' }`.
 - Optional child DOM elements automatically appended given as an array `childElementList`.
