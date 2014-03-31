@@ -1,4 +1,4 @@
-# picoh.js
+# Picoh
 Picoh is my take on the JavaScript frontend micro framework, providing event handling, DOM querying/manipulation, XMLHTTP requests and a handful of utility methods.
 
 The focus is on a lean code footprint - minified and gzipped everything weighs in at around the **2.5KB** mark. This will further drop once global usage of IE8 drops to a level where public opinion says support is no longer required.
@@ -27,7 +27,7 @@ Returns a single DOM element from the `id` given. Just a wrapper around the `doc
 - Wraps the given `handler` in a debounce routine that will be called only after `delay` milliseconds have elapsed since last call to the routine was made.
 - A `clear()` method allows for the reset of the current debounce timeout in progress.
 
-Example usage:
+Example:
 
 ```js
 function callMe() {
@@ -49,23 +49,24 @@ debounceMe();
 #### $.each(collection,handler)
 - Iterate over the given `collection`, calling `handler` for each item.
 - Collection can be of type `array`, `HtmlCollection`, `NodeList` or `object`.
-- Handler passed parameters of item value and numeric index for collection types `array`, `HtmlCollection` and `NodeList`.
-- Handler passed parameters of item value, key name and iteration count for collection type `object`.
+- Handler passed parameters of `value` and `index` for collection types `array`, `HtmlCollection` and `NodeList`.
+- Handler passed parameters of `value`, `key` name and `iteration` count for collection type `object`.
 - Returning `false` from the handler will short-circuit the `$.each()` loop immediately.
 
-Example usage:
+Example:
 
 ```js
-var myArray = [1,2,3,4];
 function handlerArray(value,index) {
 
 	console.log(value + ' - ' + index);
 }
 
-$.each(myArray,handlerArray);
+$.each(
+	[1,2,3,4],
+	handlerArray
+);
 
-var myObject = { 'key1': 'value1','key2': 'value2','key3': 'value3','key4': 'value4' };
-function myHandler(value,key,iteration) {
+function handlerObject(value,key,iteration) {
 
 	console.log(value + ' - ' + key + ' - ' + iteration);
 
@@ -75,7 +76,10 @@ function myHandler(value,key,iteration) {
 	}
 }
 
-$.each(myObject,myHandler);
+$.each(
+	{ 'key1': 'value1','key2': 'value2','key3': 'value3','key4': 'value4' },
+	handlerObject
+);
 ```
 
 **Note:** For evaluating `HTMLCollection`/`NodeList` collections, `$.each()` uses [Duck typing](http://en.wikipedia.org/wiki/Duck_typing), looking for `.item` and `.length` keys which should (hopefully) be reliable enough.
@@ -103,7 +107,7 @@ Trim leading/trailing whitespace from the given `string` and return the result.
 - Attach an event `handler` to the given `object` of the given `type`.
 - **Note:** For IE8 and below implements `attachEvent()`, correction of `this` and event cleanup upon document unload to (hopefully) avoid memory leakage.
 
-Example usage:
+Example:
 
 ```js
 function clickHandler(event) {
@@ -185,13 +189,13 @@ With above example messages will only log when mouse pointer *enters* or *leaves
 - Based upon the standalone DOM ready method presented in the following [gist](https://gist.github.com/magnetikonline/5270265).
 
 #### $.DOM.create(name[,attributeList][,childElementList])
-- Creates a new DOM element with the given node name `name`.
+- Creates a new DOM element with the given node `name`.
 - Optional attributes given as a key/value object `attributeList`.
 	- Keys are to be given as DOM element properties (e.g. `class="myclass"` as `{ className: 'myclass' }`.
 - Optional child DOM elements automatically appended given as an array `childElementList`.
 	- Child elements given as strings will be appended as a DOM `TextNode`.
 
-Example usage:
+Example:
 
 ```js
 var myCreatedDOMEl = $.DOM.create(
@@ -253,7 +257,7 @@ Returns `true` if `element` has the given CSS class `name` assigned, otherwise r
 - Internally uses a simplistic `element.style.[styleKey] = value` assignment, therefore `styleList` key(s) must be given using camel cased style names (e.g. `backgroundColor`).
 - Setting inline CSS `opacity` will apply the same IE8 and below alternatives as outlined in `$.DOM.setOpacity()` above.
 
-Example usage:
+Example:
 
 ```js
 var myCreatedDOMEl = $.DOM.create('div',false,['Content']);
@@ -327,7 +331,7 @@ Identical in functionality to `$.DOM.Anim.cancelAnimationEnd()`, but for CSS3 tr
 		- **Note:** Uses `JSON.parse()` for the parsing which requires standards mode for IE8.
 - An optional `parameterList` given as a key/value object with be passed on the query string using `GET`, or as form data when using `POST`.
 
-Example usage:
+Example:
 
 ```js
 function myHandler(data) {
