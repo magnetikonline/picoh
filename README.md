@@ -13,10 +13,48 @@ All methods are namespaced under `window.$` / `window.$$` with no messing of *an
 
 ## Methods
 - [General](#general)
+	- [$(id)](#id)
+	- [$.debounce(handler,delay)](#debouncehandlerdelay)
+	- [$.each(collection,handler)](#eachcollectionhandler)
+	- [$.trim(string)](#trimstring)
+	- [$.nextTick(handler)](#nexttickhandler)
+	- [$.reqAnimFrame(handler)](#reqanimframehandler)
+	- [*Has JavaScript?* CSS class hook](#has-javascript-css-class-hook)
 - [Events](#events)
+	- [$.Event.add(object,type,handler)](#eventaddobjecttypehandler)
+	- [$.Event.remove(object,type,handler)](#eventremoveobjecttypehandler)
+	- [$.Event.preventDefault(event)](#eventpreventdefaultevent)
+	- [$.Event.stopPropagation(event)](#eventstoppropagationevent)
+	- [$.Event.getTarget(event)](#eventgettargetevent)
+	- [$.Event.getRelatedTarget(event)](#eventgetrelatedtargetevent)
+	- [$.Event.isMouseEnterLeave(event,element)](#eventismouseenterleaveeventelement)
+	- [$.Event.getMousePosition(event)](#eventgetmousepositionevent)
 - [DOM](#dom)
+	- [$$(query) / $$(element,query)](#query--elementquery)
+	- [$.DOM.ready(handler)](#domreadyhandler)
+	- [$.DOM.create(name[,attributeList][,childElementList])](#domcreatenameattributelistchildelementlist)
+	- [$.DOM.insertBefore(element,referenceElement)](#dominsertbeforeelementreferenceelement)
+	- [$.DOM.insertAfter(element,referenceElement)](#dominsertafterelementreferenceelement)
+	- [$.DOM.replace(element,oldElement)](#domreplaceelementoldelement)
+	- [$.DOM.remove(element)](#domremoveelement)
+	- [$.DOM.removeChildAll(element)](#domremovechildallelement)
+	- [$.DOM.hasClass(element,name)](#domhasclasselementname)
+	- [$.DOM.addClass(element,name)](#domaddclasselementname)
+	- [$.DOM.removeClass(element,name)](#domremoveclasselementname)
+	- [$.DOM.setOpacity(element,opacity)](#domsetopacityelementopacity)
+	- [$.DOM.setStyle(element,styleList)](#domsetstyleelementstylelist)
+	- [$.DOM.getData(element,key)](#domgetdataelementkey)
+	- [$.DOM.getOffset(element[,toParent])](#domgetoffsetelementtoparent)
+	- [$.DOM.getPageScroll()](#domgetpagescroll)
+	- [$.DOM.getViewportSize()](#domgetviewportsize)
+	- [$.DOM.getDocumentSize()](#domgetdocumentsize)
 - [Animation/transition end DOM events](#animationtransition-end-dom-events)
+	- [$.DOM.Anim.onAnimationEnd(element,handler[,data])](#domanimonanimationendelementhandlerdata)
+	- [$.DOM.Anim.cancelAnimationEnd(element)](#domanimcancelanimationendelement)
+	- [$.DOM.Anim.onTransitionEnd(element,handler[,data])](#domanimontransitionendelementhandlerdata)
+	- [$.DOM.Anim.cancelTransitionEnd(element)](#domanimcanceltransitionendelement)
 - [XMLHTTP](#xmlhttp)
+	- [$.request(url[,method][,handler][,parameterList])](#requesturlmethodhandlerparameterlist)
 
 ### General
 
@@ -239,11 +277,11 @@ Returns `true` if `element` has the given CSS class `name` assigned, otherwise r
 #### $.DOM.addClass(element,name)
 - Add one or more CSS classes of the given `name` to `element`.
 - Provide multiple CSS class names space separated.
-- CSS class names already present for the `element` will be silently ignored and not duplicated.
+- CSS classes already present on `element` will be silently ignored.
 
 #### $.DOM.removeClass(element,name)
 - Remove one or more CSS classes of the given `name` from `element`.
-- Provide multiple CSS class name removals space separated.
+- Provide multiple CSS class names space separated.
 
 #### $.DOM.setOpacity(element,opacity)
 - Set the given `element` a new `opacity` level.
