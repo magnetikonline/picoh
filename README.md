@@ -1,32 +1,30 @@
 # Picoh
 Picoh is my take on the JavaScript frontend micro framework, providing event handling, DOM querying/manipulation, XMLHTTP requests and a handful of utility methods.
 
-The focus is on a lean code footprint - minified and gzipped everything weighs in at around the **2.5KB** mark. This will further drop once global usage of IE8 drops to a level where public opinion says support is no longer required.
+The focus is on a lean code footprint - minified and gzipped everything weighs in around **2.3KB**.
 
-All methods are namespaced under `window.$` / `window.$$` with no messing of *any* object prototypes.
+All methods are namespaced under `window.$` / `window.$$` with no modification of *any* object prototypes.
 
 ## What's supported?
-- Picoh takes advantage of several core methods available in more modern browsers (such as `document.querySelectorAll()`) avoiding heavy/slow polyfills to keep the code footprint small.
-- Designed for and tested against the usual suspects of Google Chrome, Firefox, Safari and Opera (Presto). On the Microsoft front IE8 and above is supported.
-- Expecting a `!DOCTYPE` that puts your pages into *standards mode*, with the [HTML5 doctype](http://www.w3.org/html/wg/drafts/html/master/syntax.html#the-doctype) a good selection. More a requirement for full IE8 compatibility, where some core methods used by Picoh [won't make themselves available](http://caniuse.com/json) in quirks mode. You could work around such edge cases, but the result is increased code footprint - exactly what I'm trying to avoid here.
-- Finally it's a smart idea to zero out both `margin` and `padding` from the `<body>` element to help with cross browser consistency with some of the DOM methods, such as calculating [viewport](#domgetviewportsize) and [document](#domgetdocumentsize) sizes.
+- Picoh takes advantage of core methods available in more modern browsers (such as `document.querySelectorAll()`) avoiding heavy polyfills to keep the code footprint small.
+- Designed for and tested against the usual suspects of Google Chrome, Firefox and OSX Safari. On the Microsoft front **IE9 and above** is supported.
+	- The final revision supporting IE8 is [tagged here](https://github.com/magnetikonline/picoh/tree/ie8-final).
+- Expects:
+	- A `!DOCTYPE` that puts your pages into *standards mode*, with the [HTML5 doctype](http://w3c.github.io/html/syntax.html#the-doctype) a good selection. More a requirement for full IE compatibility (historically an IE8 gripe), where some core methods used by Picoh [won't make themselves available](http://caniuse.com/#feat=json) in 'quirks mode'. You *can* work around such edge cases, but the result is increased code footprint - exactly what I'm trying to avoid here.
+	- Picoh loaded ideally from page `<head>` and executed asynchronously (e.g. `<script async src="/uri/to/picoh.js"></script>`).
+	- Removal of both `margin` and `padding` from the `<body>` element to help cross browser consistency with some DOM methods, such as calculating [viewport](#domgetviewportsize) and [document](#domgetdocumentsize) sizes.
 
 ## Methods
 - [General](#general)
 	- [$(id)](#id)
 	- [$.debounce(handler,delay)](#debouncehandlerdelay)
 	- [$.each(collection,handler)](#eachcollectionhandler)
-	- [$.trim(string)](#trimstring)
 	- [$.nextTick(handler)](#nexttickhandler)
 	- [$.reqAnimFrame(handler)](#reqanimframehandler)
-	- [*Has JavaScript?* CSS class hook](#has-javascript-css-class-hook)
 - [Events](#events)
 	- [$.Event.add(object,type,handler)](#eventaddobjecttypehandler)
 	- [$.Event.remove(object,type,handler)](#eventremoveobjecttypehandler)
-	- [$.Event.preventDefault(event)](#eventpreventdefaultevent)
-	- [$.Event.stopPropagation(event)](#eventstoppropagationevent)
 	- [$.Event.getTarget(event)](#eventgettargetevent)
-	- [$.Event.getRelatedTarget(event)](#eventgetrelatedtargetevent)
 	- [$.Event.isMouseEnterLeave(event,element)](#eventismouseenterleaveeventelement)
 	- [$.Event.getMousePosition(event)](#eventgetmousepositionevent)
 - [DOM](#dom)
@@ -41,7 +39,6 @@ All methods are namespaced under `window.$` / `window.$$` with no messing of *an
 	- [$.DOM.hasClass(element,name)](#domhasclasselementname)
 	- [$.DOM.addClass(element,name)](#domaddclasselementname)
 	- [$.DOM.removeClass(element,name)](#domremoveclasselementname)
-	- [$.DOM.setOpacity(element,opacity)](#domsetopacityelementopacity)
 	- [$.DOM.setStyle(element,styleList)](#domsetstyleelementstylelist)
 	- [$.DOM.getData(element,key)](#domgetdataelementkey)
 	- [$.DOM.getOffset(element[,toParent])](#domgetoffsetelementtoparent)
@@ -54,12 +51,15 @@ All methods are namespaced under `window.$` / `window.$$` with no messing of *an
 	- [$.DOM.Anim.onTransitionEnd(element,handler[,data])](#domanimontransitionendelementhandlerdata)
 	- [$.DOM.Anim.cancelTransitionEnd(element)](#domanimcanceltransitionendelement)
 - [XMLHTTP](#xmlhttp)
-	- [$.request(url[,method][,handler][,parameterList])](#requesturlmethodhandlerparameterlist)
+	- [$.request(url[,method][,handler][,parameterCollection])](#requesturlmethodhandlerparametercollection)
+- [Miscellaneous](#miscellaneous)
+	- [*Has JavaScript?* CSS class hook](#has-javascript-css-class-hook)
+	- [Attachment of Picoh to alternative object](#attachment-of-picoh-to-alternative-object)
 
 ### General
 
 #### $(id)
-Returns a single DOM element from the `id` given. Just a wrapper around the `document.getElementByID()` we all know and love.
+Returns a single DOM element from the `id` given. Just a wrapper around `document.getElementByID()` we all know and love.
 
 #### $.debounce(handler,delay)
 - Wraps the given `handler` in a debounce routine that will be called only after `delay` milliseconds have elapsed since last call to the routine was made.
@@ -87,16 +87,16 @@ debounceMe();
 #### $.each(collection,handler)
 - Iterate over the given `collection`, calling `handler` for each item.
 - Collection can be of type `array`, `HtmlCollection`, `NodeList` or `object`.
-- Handler passed parameters of `value` and `index` for collection types `array`, `HtmlCollection` and `NodeList`.
-- Handler passed parameters of `value`, `key` name and `iteration` count for collection type `object`.
-- Returning `false` from the handler will short-circuit the `$.each()` loop immediately.
+- `handler` passed arguments of `value` and `index` for types `array`, `HtmlCollection` and `NodeList`.
+- `handler` passed arguments of `value`, `key` name and `iteration` count for type `object`.
+- Returning `false` from `handler` will halt the iteration immediately.
 
 Example:
 
 ```js
 function handlerArray(value,index) {
 
-	console.log(value + ' - ' + index);
+	console.log([value,index].join(' - '));
 }
 
 $.each(
@@ -106,7 +106,7 @@ $.each(
 
 function handlerObject(value,key,iteration) {
 
-	console.log(value + ' - ' + key + ' - ' + iteration);
+	console.log([value,key,iteration].join(' - '));
 
 	if (key == 'key3') {
 		// exit right away
@@ -115,66 +115,52 @@ function handlerObject(value,key,iteration) {
 }
 
 $.each(
-	{ 'key1': 'value1','key2': 'value2','key3': 'value3','key4': 'value4' },
+	{ key1: 'value1',key2: 'value2',key3: 'value3',key4: 'value4' },
 	handlerObject
 );
 ```
 
-**Note:** For evaluating `HTMLCollection`/`NodeList` collections, `$.each()` uses [Duck typing](http://en.wikipedia.org/wiki/Duck_typing), looking for `.item` and `.length` keys which should (hopefully) be reliable enough.
-
-#### $.trim(string)
-Trim leading/trailing whitespace from the given `string` and return the result.
+**Note:** For evaluating `HTMLCollection`/`NodeList` types, `$.each()` uses [Duck typing](http://en.wikipedia.org/wiki/Duck_typing), looking for `item` and `length` properties.
 
 #### $.nextTick(handler)
-- Emulation of Node.js's [process.nextTick()](http://nodejs.org/api/process.html#process_process_nexttick_callback) for the browser.
+- Emulation of Node.js [`process.nextTick()`](https://nodejs.org/api/process.html#process_process_nexttick_callback_arg) method.
 - Produces a faster and [more efficient](http://dbaron.org/log/20100309-faster-timeouts) callback on the next event loop vs. `window.setTimeout(function() {},0)`.
-- Implemented using `window.postMessage()` under the hood, falling back to `window.setTimeout()` for IE8 (which does support `window.postMessage()` but sadly operates synchronously).
+- Implemented using `window.postMessage()` under the hood.
 
 #### $.reqAnimFrame(handler)
 - Wrapper for `window.requestAnimationFrame`, a more efficient method of processing animation frames versus traditional `window.setTimeout()` use.
 - Handles cross browser API prefixing between browser vendors.
 - A fallback `window.setTimeout()` polyfill is provided for unsupported browsers which will be called approximately once every 16ms to give a *close to* 60fps fire rate.
 
-#### *Has JavaScript?* CSS class hook
-- Not a method per se, but placing an attribute of `<html class="nojs">` on a document's `<html>` element will be automatically replaced with `<html class="js">` upon load of the library.
-- Used as a CSS styling hook for no/has JavaScript scenarios.
-
 ### Events
 
 #### $.Event.add(object,type,handler)
 - Attach an event `handler` to the given `object` of the given `type`.
-- **Note:** For IE8 and below implements `attachEvent()`, correction of `this` and event cleanup upon document unload to (hopefully) avoid memory leakage.
+- Event `type` can be given as a space separated list for attaching multiple events to a single `object`.
 
 Example:
 
 ```js
-function clickHandler(event) {
+function clickTouchHandler(event) {
 
-	console.log('Clicked!');
+	console.log('Clicked or touched!');
 	console.log(this);
 	console.log(event);
 }
 
-$.Event.add($('domelement'),'click',clickHandler);
+$.Event.add($('domelement'),'click touchstart',clickTouchHandler);
 ```
 
 #### $.Event.remove(object,type,handler)
-Remove an event `handler` from the given `object` of the given `type`.
-
-#### $.Event.preventDefault(event)
-Cancels the default action of an `event` and prevents further propagation.
-
-#### $.Event.stopPropagation(event)
-Prevents further propagation of the given `event`.
+- Remove an event `handler` from the given `object` of the given `type`.
+- Event `type` can be given as a space separated list for removing multiple events from a single `object`.
 
 #### $.Event.getTarget(event)
-Returns the DOM element that the given `event` was dispatched on.
-
-#### $.Event.getRelatedTarget(event)
-Returns the secondary DOM element for the given `event`, only useful for the mouse events `mouseover` and `mouseout`.
+- Returns the DOM element that the given `event` was dispatched on.
+- Handles the edge case with older versions of Safari where a [text node would be incorrectly returned](http://bugs.jquery.com/ticket/5539).
 
 #### $.Event.isMouseEnterLeave(event,element)
-Emulates behaviour of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ now also natively support) event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
+Emulates behavior of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ also [natively support](https://developer.mozilla.org/en-US/docs/Web/Events/mouseenter)) event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
 
 Example:
 
@@ -205,7 +191,7 @@ $.Event.add(watchMeEl,'mouseover',mouseEnterHandler);
 $.Event.add(watchMeEl,'mouseout',mouseLeaveHandler);
 ```
 
-With above example messages will only log when mouse pointer *enters* or *leaves* `<div id="watchme">`, ignoring all mouseover/mouseout events fired when entering/leaving child `<span>` elements.
+With above example messages will only log messages when mouse pointer *enters* or *leaves* `<div id="watchme">`, ignoring all mouseover/mouseout child events fired from `<span>` elements.
 
 #### $.Event.getMousePosition(event)
 - Returns the current mouse x/y pixel coordinates from the given `event`.
@@ -215,23 +201,23 @@ With above example messages will only log when mouse pointer *enters* or *leaves
 ### DOM
 
 #### $$(query) / $$(element,query)
-- A wrapper for `querySelectorAll()`, supported by recent browsers including IE8 and above, returning DOM elements for the given CSS `query`.
+- A wrapper for [`querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll), returning DOM elements for the given CSS `query`.
 - In the first form the query will be based from `document` (entire page), otherwise in the second form from the given `element`.
-- Returned DOM elements will be provided in an array, rather than a `NodeList` for ease of use.
-- **Note:** `querySelectorAll()` will only support queries based on the browsers CSS implementation. In the case of IE8 this limits use to CSS 2.1 selector types.
+- In the instance `query` is matching elements containing one or more classes _only_ (e.g. `.apple.orange.banana`) the function will use [`getElementsByClassName()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementsByClassName) in place of `querySelectorAll()` for query speed advantage.
+- Returned DOM elements will be provided as an array, rather than a `NodeList`.
+- **Note:** `querySelectorAll()` will only support queries based upon the browsers CSS implementation and it's capabilities.
 
 #### $.DOM.ready(handler)
-- Will call the given `handler` upon firing of the `DOMContentLoaded` event, using polyfills for unsupported browsers.
-- Can be called multiple times with multiple `handler` functions, each will be called in turn at the point of the document DOM loading.
-- If called after the DOM has loaded, the given `handler` will execute immediately.
-- Based upon the standalone DOM ready method presented in the following [gist](https://gist.github.com/magnetikonline/5270265).
+- Will call the given `handler` upon firing of the `document.DOMContentLoaded` event.
+- Can be called with multiple `handler` functions, each of which be called in turn at the point of DOM load completion.
+- If called *after* DOM has already loaded, the given `handler` will execute immediately via [$.nextTick(handler)](#nexttickhandler).
 
 #### $.DOM.create(name[,attributeList][,childElementList])
 - Creates a new DOM element with the given node `name`.
 - Optional attributes given as a key/value object `attributeList`.
 	- Keys are to be given as DOM element properties (e.g. `class="myclass"` as `{ className: 'myclass' }`.
 - Optional child DOM elements automatically appended given as an array `childElementList`.
-	- Child elements given as strings will be appended as a DOM `TextNode`.
+	- Child elements of type `string` will be appended as a new `TextNode`.
 
 Example:
 
@@ -253,6 +239,7 @@ var myCreatedDOMEl = $.DOM.create(
 	Another line of text
 </div>
 */
+
 document.documentElement.appendChild(myCreatedDOMEl);
 ```
 
@@ -269,31 +256,22 @@ Replace the given `oldElement` within the current document with `element`. Retur
 Remove the given `element` from the DOM, returning `element`.
 
 #### $.DOM.removeChildAll(element)
-Remove all child DOM elements from the given `element`.
+Remove all child DOM elements from the given `element`, returning an array of removed elements.
 
 #### $.DOM.hasClass(element,name)
 Returns `true` if `element` has the given CSS class `name` assigned, otherwise return `false`.
 
 #### $.DOM.addClass(element,name)
-- Add one or more CSS classes of the given `name` to `element`.
-- Provide multiple CSS class names space separated.
+- Add one or more CSS classes of the given `name` to `element` - providing multiple CSS class names space separated.
 - CSS classes already present on `element` will be silently ignored.
 
 #### $.DOM.removeClass(element,name)
 - Remove one or more CSS classes of the given `name` from `element`.
-- Provide multiple CSS class names space separated.
-
-#### $.DOM.setOpacity(element,opacity)
-- Set the given `element` a new `opacity` level.
-- For IE8 and below:
-	- Sets the alternative `filter: alpha(opacity=LEVEL))` syntax.
-	- Adds the CSS property `zoom: 1` to help correct IE rendering issues.
-- Given `opacity` is rounded to a maximum of two decimal places, otherwise it all just becomes a bit silly.
+- Provide multiple CSS class names for removal space separated.
 
 #### $.DOM.setStyle(element,styleList)
 - Set the given inline CSS `styleList` (as a key/value object) to `element`. Essentially an easier way to set multiple inline element style attributes at once.
 - Internally uses a simplistic `element.style.[styleKey] = value` assignment, therefore `styleList` key(s) must be given using camel cased style names (e.g. `backgroundColor`).
-- Setting inline CSS `opacity` will apply the same IE8 and below alternatives as outlined in `$.DOM.setOpacity()` above.
 
 Example:
 
@@ -322,7 +300,7 @@ $.DOM.setStyle(
 - If the given `key` does not exist returns `null`.
 
 #### $.DOM.getOffset(element[,toParent])
-- Returns the left/top pixel offset of the given `element` to either the top left corner of the document, or if `toParent` is provided and set `true`, to the element's parent.
+- Returns the left/top pixel offset of the given `element` to either the top left corner of the document, or if `toParent` is `true` - to the element's parent.
 - Data will be returned as an object with the structure of `{ left: 123,top: 456 }`.
 
 #### $.DOM.getPageScroll()
@@ -339,35 +317,35 @@ $.DOM.setStyle(
 - Uses the techniques suggested by [Ryan Van Etten](http://responsejs.com/labs/dimensions/#document).
 
 ### Animation/transition end DOM events
-For the background behind these methods and their uses you can refer to my [cssanimevent](https://github.com/magnetikonline/cssanimevent) JavaScript library. The following methods have been lifted and integrated from here.
+For the background behind these methods and their use, refer to the [cssanimevent](https://github.com/magnetikonline/cssanimevent) library. The following methods have been integrated here.
 
 #### $.DOM.Anim.onAnimationEnd(element,handler[,data])
-- Calls the given `handler` upon completion of a CSS3 animation applied to `element`. Lifetime of the handler will be for exactly *one* animation end event only.
+- Calls the given `handler` upon completion of a [CSS3 animation](https://developer.mozilla.org/en/docs/Web/CSS/animation) applied to `element`. Lifetime of the handler is *one* animation end event.
 - For browsers that do not support CSS3 animations, `handler` will be called instantaneously.
-- Handler will be passed a reference to `element` when called.
-- Optional `data` can be given, which will be passed to `handler` upon execution as a second parameter.
+- Handler will be passed arguments of `element` and optional `data`.
 
 #### $.DOM.Anim.cancelAnimationEnd(element)
 Cancel a pending handler assigned to `element` by a previous call to `$.DOM.Anim.onAnimationEnd()`.
 
 #### $.DOM.Anim.onTransitionEnd(element,handler[,data])
-Identical in functionality to `$.DOM.Anim.onAnimationEnd()`, but for CSS3 transitions.
+Identical in functionality to `$.DOM.Anim.onAnimationEnd()`, but for [CSS3 transitions](https://developer.mozilla.org/en/docs/Web/CSS/transition).
 
 #### $.DOM.Anim.cancelTransitionEnd(element)
 Identical in functionality to `$.DOM.Anim.cancelAnimationEnd()`, but for CSS3 transitions.
 
 ### XMLHTTP
 
-#### $.request(url[,method][,handler][,parameterList])
+#### $.request(url[,method][,handler][,parameterCollection])
 - Execute a `XMLHttpRequest()` call to the given `url`, returning `true` if the call was successful made by the browser (e.g. supports `XMLHttpRequest()`).
-- The `method` can be one of `GET` or `POST`, with `false` defaulting the method to `GET`.
+- The `method` can be one of `GET` or `POST`, with `false`/`undefined` defaulting to `GET`.
 - Optional `handler` will be executed at completion of the URL call (success or fail). Handler will be passed a single parameter of the return status/response as an object with the following keys:
 	- `ok:` Set `true` if the call returned successfully, otherwise `false`.
 	- `status:` Numeric HTTP status code returned.
 	- `text:` The response body as a string upon success, otherwise empty string.
 	- `JSON:` If response body is JSON data and could be successfully parsed, will contain a JavaScript object of this data, otherwise an empty object.
-		- **Note:** Uses `JSON.parse()` for the parsing which requires standards mode for IE8.
-- An optional `parameterList` given as a key/value object with be passed on the query string using `GET`, or as form data when using `POST`.
+- Optional `parameterCollection` given as key/value pairs with be passed either:
+	- On the query string with HTTP `GET`.
+	- Form data of content type `application/x-www-form-urlencoded` with HTTP `POST`.
 
 Example:
 
@@ -395,3 +373,27 @@ $.request(
 	}
 );
 ```
+
+### Miscellaneous
+
+#### *Has JavaScript?* CSS class hook
+- Placing a class attribute of `<html class="nojs">` on a document's `<html>` element will be automatically replaced with `<html class="js">` upon load of Picoh.
+- Used as a CSS styling hook for no/has JavaScript scenarios.
+
+#### Attachment of Picoh to alternative object
+- By default Picoh is attached to the global `window` object, providing access to it's methods via `window.$` and `window.$$()` respectively, or simply `$` and `$$()`.
+- Alternatively, Picoh can be attached to an isolated object to avoid namespace clashes, by modification of the library's [IIFE](https://en.wikipedia.org/wiki/Immediately-invoked_function_expression) arguments.
+
+Example:
+
+```js
+var attachHere = {};
+
+// start of Picoh
+(function(win,doc,picohAttach,undefined) {
+
+	// SNIP
+})(window,document,attachHere);
+```
+
+Picoh will be accessible at `attachHere.$`/`attachHere.$$()`.

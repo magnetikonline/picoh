@@ -1,8 +1,8 @@
-(function(win,doc,undefined) {
+(function(win,doc,picohAttach,undefined) {
 
 	'use strict';
 
-	var TRIM_REGEXP = /^\s+|\s+$/g,
+	var SPLIT_ON_SPACES_REGEXP = / +/,
 		NEXT_TICK_MESSAGE_NAME = 'picoh-tick',
 		REQUEST_ANIMATION_FRAME_FAUX_DELAY = 16,
 		picoh = function(id) {
@@ -11,16 +11,12 @@
 		},
 
 		// aliases for minification:
-		// - document.documentElement,picoh.trim()
-		// - picoh.Event.add()/remove()/stopPropagation()/getRelatedTarget(),
-		// - picoh.DOM.hasClass()/setOpacity()/getPageScroll()
-		docEl = doc.documentElement,
-		trimString,
-		eventAdd,eventRemove,stopPropagation,getRelatedTarget,
-		hasClass,setOpacity,getPageScroll,
-
-		// if (realEventModel == false) then Internet Explorer < 9 event model used
-		realEventModel = !!win.addEventListener,
+		// - document.documentElement,
+		// - picoh.nextTick()
+		// - picoh.Event.add()/remove()
+		documentElement = doc.documentElement,
+		nextTick,
+		eventAdd,eventRemove,
 
 		nextTickHandlerList = [],
 		reqAnimFrameNative =
@@ -29,18 +25,32 @@
 			win.webkitRequestAnimationFrame,
 		reqAnimFrameFauxLastTime = 0;
 
+	// determine object to attach Picoh to - if undefined attached to window
+	picohAttach = picohAttach || win;
+
+	function splitOnSpaces(value) {
+
+		return value.trim().split(SPLIT_ON_SPACES_REGEXP);
+	}
+
 	picoh.debounce = function(handler,delay) {
 
 		var timeout,
 			debounce = function() {
 
-				if (timeout !== undefined) clearTimeout(timeout);
+				if (timeout !== undefined) {
+					clearTimeout(timeout);
+				}
+
 				timeout = setTimeout(handler,delay);
 			};
 
 		debounce.clear = function() {
 
-			if (timeout !== undefined) clearTimeout(timeout);
+			if (timeout !== undefined) {
+				clearTimeout(timeout);
+			}
+
 			timeout = undefined;
 		};
 
@@ -52,261 +62,180 @@
 		var index = 0;
 
 		if (
-			(collection instanceof Array) ||
+			(Array.isArray(collection)) ||
 			((collection.item !== undefined) && (collection.length !== undefined))
 		) {
-			// collection is an array or DOM HtmlCollection/NodeList (duck typing)
+			// collection is array or HtmlCollection/NodeList (duck typing)
 			for (var length = collection.length;index < length;index++) {
 				// if handler returns false, bail early
-				if (handler(collection[index],index) === false) return;
+				if (handler(collection[index],index) === false) {
+					return;
+				}
 			}
 
 		} else {
-			// otherwise, collection is an object
-			for (var key in collection) {
+			// otherwise, collection is assumed an object
+			var propertyList = Object.keys(collection);
+			while (propertyList.length) {
 				// if handler returns false, bail early
-				if (handler(collection[key],key,index++) === false) return;
+				if (handler(
+					collection[propertyList[0]],
+					propertyList.shift(), // remove item from property key list
+					index++
+				) === false) {
+					return;
+				}
 			}
 		}
 	};
 
-	picoh.trim = trimString = function(value) {
+	picoh.nextTick = nextTick = function(handler) {
 
-		return value.replace(TRIM_REGEXP,'');
+		// add handler to next tick stack and post message
+		nextTickHandlerList.push(handler);
+		win.postMessage(NEXT_TICK_MESSAGE_NAME,'*');
 	};
 
-	picoh.nextTick = (realEventModel)
-		? (function() {
+	// setup nextTick() message handler function
+	win.addEventListener(
+		'message',
+		function(event) {
 
-			// setup message handler function
-			win.addEventListener(
-				'message',
-				function(event) {
+			if ((event.source == win) && (event.data == NEXT_TICK_MESSAGE_NAME)) {
+				// received tick
+				event.stopPropagation();
 
-					if ((event.source == win) && (event.data == NEXT_TICK_MESSAGE_NAME)) {
-						stopPropagation(event);
-						if (nextTickHandlerList.length) nextTickHandlerList.shift()();
-					}
-				},
-				true // note: using capture here
-			);
-
-			return function(handler) {
-
-				// add handler to next tick stack and post message
-				nextTickHandlerList.push(handler);
-				win.postMessage(NEXT_TICK_MESSAGE_NAME,'*');
-			};
-		})()
-		: function(handler) {
-
-			// unable to use postMessage() successfully with IE8 (it's handled synchronously) - so fallback to setTimeout()
-			setTimeout(handler);
-		};
+				if (nextTickHandlerList.length) {
+					// remove single handler from stack and call it
+					nextTickHandlerList.shift()();
+				}
+			}
+		},
+		true // note: using capture here
+	);
 
 	picoh.reqAnimFrame = (reqAnimFrameNative !== undefined)
 		? function(handler) { reqAnimFrameNative(handler); }
 		: function(handler) {
 
+			// note: can remove faux handler in place of all native once IE10 is base support level
 			// faux window.requestAnimationFrame() method
 			// call approximately every REQUEST_ANIMATION_FRAME_FAUX_DELAY milliseconds
-			var curTime = new Date().getTime(),
-				timeToCall = Math.max(0,REQUEST_ANIMATION_FRAME_FAUX_DELAY - (curTime - reqAnimFrameFauxLastTime));
+			var currentTime = Date.now(),
+				timeoutDelay = Math.max(0,REQUEST_ANIMATION_FRAME_FAUX_DELAY - (currentTime - reqAnimFrameFauxLastTime));
 
-			setTimeout(handler,timeToCall);
-			reqAnimFrameFauxLastTime = curTime + timeToCall;
+			setTimeout(handler,timeoutDelay);
+			reqAnimFrameFauxLastTime = currentTime + timeoutDelay;
 		};
 
 	picoh.Event = function() {
 
-		var method = {},
-			eventList = [];
+		var method = {};
 
-		method.add = eventAdd = (realEventModel)
-			? function(obj,type,handler) { obj.addEventListener(type,handler,false); }
-			: function(obj,type,handler) {
+		method.add = eventAdd = function(obj,type,handler) {
 
-				// Internet Explorer < 9 event handler
-				// - fix 'this' upon event handler call
-				// - event tracking [eventList] for leaky memory cleanup upon document unload
-				obj[type + handler] = function(event) { handler.call(obj,event); };
-				obj.attachEvent('on' + type,obj[type + handler]);
-				eventList.push([obj,type,handler]);
-			};
+			var typeList = splitOnSpaces(type);
+			while (typeList.length) {
+				obj.addEventListener(typeList.pop(),handler,false);
+			}
+		};
 
-		method.remove = eventRemove = (realEventModel)
-			? function(obj,type,handler) { obj.removeEventListener(type,handler,false); }
-			: function(obj,type,handler) {
+		method.remove = eventRemove = function(obj,type,handler) {
 
-				// Internet Explorer < 9 - reverse steps in Event.add() and unassociate handler wrapper to release memory (we hope - this is IE after all)
-				obj.detachEvent('on' + type,obj[type + handler]);
-				obj[type + handler] = null;
-			};
-
-		method.preventDefault = (realEventModel)
-			? function(event) { event.preventDefault(); }
-			: function(event) { event.returnValue = false; };
-
-		method.stopPropagation = stopPropagation = (realEventModel)
-			? function(event) { event.stopPropagation(); }
-			: function(event) { event.cancelBubble = true; };
+			var typeList = splitOnSpaces(type);
+			while (typeList.length) {
+				obj.removeEventListener(typeList.pop(),handler,false);
+			}
+		};
 
 		method.getTarget = function(event) {
 
-			// W3 / Internet Explorer target
-			var el = event.target || event.srcElement;
+			var el = event.target;
 
 			// defeat Safari browser bug (target element should not be a text node)
 			return (el && (el.nodeType == 3)) ? el.parentNode : el;
 		};
 
-		method.getRelatedTarget = getRelatedTarget = (realEventModel)
-			? function(event) { return event.relatedTarget; }
-			: function(event) {
-
-				// Internet Explorer relatedTarget
-				return (event.type == 'mouseover')
-					? event.fromElement
-					: ((event.type == 'mouseout') ? event.toElement : null);
-			};
-
 		method.isMouseEnterLeave = function(event,el) {
 
-			return !el.contains(getRelatedTarget(event));
+			var relEl = event.relatedTarget;
+			return (relEl && !el.contains(relEl));
 		};
 
 		// getMousePosition() returns the mouse position relative to the document, not the browser viewport
 		// note: event.pageX/event.pageY is mis-reported (behaves like event.clientX/event.clientY) with IE10 10.0.9200.16384, but fixed in 10.0.9200.16484 - http://bugs.jquery.com/ticket/12343
-		method.getMousePosition = (realEventModel)
-			? function(event) {
+		method.getMousePosition = function(event) {
 
-				// using Math.round() as IE10 (and other vendors may follow in future) can/will report fractional coordinates due to sub-pixel rendering
-				// http://blogs.msdn.com/b/ie/archive/2012/02/17/sub-pixel-rendering-and-the-css-object-model.aspx
-				return {
-					x: Math.round(event.pageX || 0),
-					y: Math.round(event.pageY || 0)
-				};
-			}
-			: function(event) {
-
-				if (event.clientX || event.clientY) {
-					// include the current page x/y scroll positions into document to mimic event.pageX/event.pageY
-					var pageScroll = getPageScroll();
-
-					return {
-						x: (event.clientX || 0) + pageScroll.x,
-						y: (event.clientY || 0) + pageScroll.y
-					};
-				}
-
-				return { x: 0,y: 0 };
+			// using Math.round() as IE10 (and other vendors may follow in future) can/will report fractional coordinates due to sub-pixel rendering
+			// http://blogs.msdn.com/b/ie/archive/2012/02/17/sub-pixel-rendering-and-the-css-object-model.aspx
+			return {
+				x: Math.round(event.pageX || 0),
+				y: Math.round(event.pageY || 0)
 			};
-
-		if (!realEventModel) {
-			// Internet Explorer < 9 event memory cleanup routine
-			win.attachEvent('onunload',function() {
-
-				// cycle eventList and remove all events created
-				for (var index = 0,eventItem;eventItem = eventList[index];index++) {
-					eventRemove(eventItem[0],eventItem[1],eventItem[2]);
-				}
-			});
-		}
+		};
 
 		return method;
 	}();
 
 	picoh.DOM = function() {
 
-		var READY_STATE_REGEXP = /^(loade|c)/,
-			DOM_CONTENT_LOADED_EVENT = 'DOMContentLoaded',
-			ON_READY_STATE_CHANGE_EVENT = 'onreadystatechange',
-			IE_DOM_SCROLL_CHECK_DELAY = 50,
+		var DOM_QUERY_CLASS_ONLY_REGEXP = /^(\.[^.#> ]+)+$/, // match sequences of [.classname01.classname02]
+			DOM_QUERY_CLASS_ONLY_DOT_REPLACE_REGEXP = /\./g,
+			DOM_CONTENT_LOADED_EVENT_NAME = 'DOMContentLoaded',
 			method = {},
-			hasClassRegExpCollection = {},
-			readyHandlerList,
-			DOMIsReady = READY_STATE_REGEXP.test(doc.readyState);
+			DOMIsReady,
+			DOMReadyHandlerList,
+			hasClassRegExpCollection = {};
 
 		// DOM querySelectorAll() method wrapper in global namespace
-		win.$$ = function() {
+		picohAttach.$$ = function() {
 
-			var elList = [];
+			var queryArgIndex = (arguments.length - 1),
+				rootEl = (queryArgIndex) ? arguments[0] : doc,
+				query = arguments[queryArgIndex],
+				elHTMLCollection = (DOM_QUERY_CLASS_ONLY_REGEXP.test(query))
+					? rootEl.getElementsByClassName(query.replace(DOM_QUERY_CLASS_ONLY_DOT_REPLACE_REGEXP,' ').trim())
+					: rootEl.querySelectorAll(query);
 
-			if (doc.querySelectorAll) {
-				var elGiven = (arguments.length - 1),
-					nodeList = ((elGiven) ? arguments[0] : doc).querySelectorAll(arguments[elGiven]);
-
-				// convert nodeList to an array
-				for (var index = 0,length = nodeList.length;index < length;index++) {
-					elList.push(nodeList[index]);
-				}
-			}
-
-			return elList;
+			// convert HTMLCollection to array
+			return Array.prototype.slice.call(elHTMLCollection);
 		};
 
 		// DOM ready handler
 		method.ready = function(handler) {
 
-			// if DOM ready call handler right away
-			if (DOMIsReady) return handler();
+			// if DOM ready, call handler right away
+			// note: document.readyState property - https://developer.mozilla.org/en/docs/Web/API/Document/readyState
+			if (DOMIsReady || (doc.readyState == 'complete')) {
+				DOMIsReady = true;
+				return nextTick(handler);
+			}
 
-			if (!readyHandlerList) {
-				// init events
-				if (realEventModel) {
-					eventAdd(doc,DOM_CONTENT_LOADED_EVENT,readyHandler);
-					eventAdd(win,'load',readyHandler);
+			if (DOMReadyHandlerList === undefined) {
+				// init DOM ready event handlers
+				DOMReadyHandlerList = [];
 
-				} else {
-					// Internet Explorer event model - but not via $.Event.add() to keep lightweight, 'this' correction/etc. is overkill here
-					doc.attachEvent(ON_READY_STATE_CHANGE_EVENT,readyHandler);
-					win.attachEvent('onload',readyHandler);
-
-					// doScroll() hack for Internet Explorer < 9, (it should) fire earlier than 'onreadystatechange'
-					// this will fail (badly) if used inside an iframe - so don't
-					if (docEl.doScroll) {
-						(function doScrollCheck() {
-
-							if (!DOMIsReady) {
-								try {
-									docEl.doScroll('left');
-
-								} catch(e) {
-									// call to docEl.doScroll() failed, lets try again after delay
-									return setTimeout(doScrollCheck,IE_DOM_SCROLL_CHECK_DELAY);
-								}
-
-								// docEl.doScroll() success, DOM is now ready
-								DOMIsReady = true;
-								readyHandler();
-							}
-						})();
-					}
-				}
-
-				readyHandlerList = [];
+				// window.load required as fallback because if:
+				// - Picoh successfully loaded after 'DOMContentLoaded' fired
+				// - ...but before (doc.readyState == 'complete')
+				// - handlers would be pushed onto DOMReadyHandlerList - but never get actioned
+				eventAdd(doc,DOM_CONTENT_LOADED_EVENT_NAME,DOMReadyHandler);
+				eventAdd(win,'load',DOMReadyHandler);
 			}
 
 			// add handler to stack
-			readyHandlerList.push(handler);
+			DOMReadyHandlerList.push(handler);
 		};
 
-		function readyHandler(event) {
+		function DOMReadyHandler() {
 
-			if (realEventModel || DOMIsReady || (event.type == 'load') || (READY_STATE_REGEXP.test(doc.readyState))) {
-				// detach events
-				if (realEventModel) {
-					eventRemove(doc,DOM_CONTENT_LOADED_EVENT,readyHandler);
-					eventRemove(win,'load',readyHandler);
+			// detach events and process handler stack
+			DOMIsReady = true;
+			eventRemove(doc,DOM_CONTENT_LOADED_EVENT_NAME,DOMReadyHandler);
+			eventRemove(win,'load',DOMReadyHandler);
 
-				} else {
-					doc.detachEvent(ON_READY_STATE_CHANGE_EVENT,readyHandler);
-					win.detachEvent('onload',readyHandler);
-				}
-
-				// process handler stack
-				while (readyHandlerList.length) readyHandlerList.shift()();
-				DOMIsReady = true;
+			while (DOMReadyHandlerList.length) {
+				DOMReadyHandlerList.shift()();
 			}
 		}
 
@@ -315,15 +244,21 @@
 			var createEl = doc.createElement(name);
 
 			if (attributeList) {
-				for (var index in attributeList) {
-					createEl[index] = attributeList[index];
+				var propertyList = Object.keys(attributeList);
+
+				while (propertyList.length) {
+					createEl[propertyList[0]] = attributeList[propertyList.shift()];
 				}
 			}
 
 			if (childElList) {
 				for (var index = 0,length = childElList.length;index < length;index++) {
 					var childEl = childElList[index];
-					createEl.appendChild((typeof childEl == 'string') ? doc.createTextNode(childEl) : childEl);
+					createEl.appendChild(
+						(typeof childEl == 'string')
+							? doc.createTextNode(childEl)
+							: childEl
+					);
 				}
 			}
 
@@ -348,82 +283,86 @@
 
 		method.remove = function(el) {
 
-			// return el
+			// return removed el
 			return el.parentNode.removeChild(el);
 		};
 
 		method.removeChildAll = function(el) {
 
-			while (el.firstChild) el.removeChild(el.firstChild);
+			var removedElList = [];
+			while (el.firstChild) {
+				removedElList.push(el.firstChild);
+				el.removeChild(el.firstChild);
+			}
+
+			return removedElList;
 		};
 
-		method.hasClass = hasClass = function(el,name,className) {
-
-			if (className === undefined) className = el.className;
+		method.hasClass = function(el,name) {
 
 			return (
 				(hasClassRegExpCollection[name])
 					? hasClassRegExpCollection[name]
 					: hasClassRegExpCollection[name] = RegExp('(^| )' + name + '( |$)')
-			).test(className);
+			).test(el.className);
 		};
 
+		// note: can remove addClass()/removeClass() methods using el.classList.add()/remove() instead once IE10 is base support level
 		method.addClass = function(el,name) {
 
-			var classNameList = name.split(' '),
-				newClassName = el.className;
+			// merge current and to be added class names into a single list
+			var addClassNameList = splitOnSpaces(el.className).concat(splitOnSpaces(name)),
+				updateClassNameList = [];
 
-			while (classNameList.length) {
-				var className = classNameList.pop();
-				if (!hasClass(undefined,className,newClassName)) newClassName += ' ' + className;
+			while (addClassNameList.length) {
+				// add class only if not already part of the update class name list
+				var addClassName = addClassNameList.shift();
+				if (updateClassNameList.indexOf(addClassName) < 0) {
+					updateClassNameList.push(addClassName);
+				}
 			}
 
-			el.className = trimString(newClassName);
+			el.className = updateClassNameList.join(' ');
 		};
 
 		method.removeClass = function(el,name) {
 
-			var classNameList = name.split(' '),
-				newClassName = ' ' + el.className + ' ';
+			var currentClassNameList = splitOnSpaces(el.className),
+				removeClassNameList = splitOnSpaces(name),
+				updateClassNameList = [];
 
-			while (classNameList.length) {
-				newClassName = newClassName.replace(' ' + classNameList.pop() + ' ',' ');
+			while (currentClassNameList.length) {
+				// keep class only if not found in updateClassNameList already (de-dupe) or removeClassNameList
+				var currentClassname = currentClassNameList.shift();
+
+				if (
+					(updateClassNameList.indexOf(currentClassname) < 0) &&
+					(removeClassNameList.indexOf(currentClassname) < 0)
+				) {
+					updateClassNameList.push(currentClassname);
+				}
 			}
 
-			el.className = trimString(newClassName);
-		};
-
-		method.setOpacity = setOpacity = function(el,opacity) {
-
-			// ensure opacity is between 0.00 and 1.00
-			opacity = Math.round(Math.max(0,Math.min(1,opacity)) * 100) / 100;
-
-			var style = el.style;
-			style.opacity = opacity;
-
-			// Internet Explorer < 9
-			if (!realEventModel) {
-				style.filter = 'alpha(opacity=' + Math.round(opacity * 100) + ')';
-				style.zoom = 1; // trigger hasLayout
-			}
+			el.className = updateClassNameList.join(' ');
 		};
 
 		method.setStyle = function(el,styleList) {
 
-			for (var index in styleList) {
-				var value = styleList[index];
-				if (index == 'opacity') {
-					setOpacity(el,value);
+			var propertyList = Object.keys(styleList);
 
-				} else {
-					el.style[index] = value;
-				}
+			while (propertyList.length) {
+				el.style[propertyList[0]] = styleList[propertyList.shift()];
 			}
 		};
 
 		method.getData = function(el,key) {
 
-			return el.getAttribute('data-' + key);
+			// emulates what el.dataset can offer in IE11+
+			// note: using el.hasAttribute() check due to this - https://developer.mozilla.org/en-US/docs/Web/API/Element.getAttribute#Notes
+			key = 'data-' + key;
+			return (el && el.hasAttribute(key))
+				? el.getAttribute(key)
+				: null;
 		};
 
 		method.getOffset = function(el,toParent) {
@@ -445,214 +384,212 @@
 			};
 		};
 
-		method.getPageScroll = getPageScroll = (win.pageXOffset !== undefined)
-			? function() {
+		method.getPageScroll = function() {
 
-				return {
-					x: win.pageXOffset,
-					y: win.pageYOffset
-				};
-			}
-			: function() {
-
-				// Internet Explorer < 9
-				return {
-					x: docEl.scrollLeft || 0,
-					y: docEl.scrollTop || 0
-				};
+			return {
+				x: win.pageXOffset || 0,
+				y: win.pageYOffset || 0
 			};
+		};
 
 		method.getViewportSize = function() {
 
 			return {
-				width: docEl.clientWidth || win.innerWidth || 0,
-				height: win.innerHeight || docEl.clientHeight || 0
+				width: documentElement.clientWidth || win.innerWidth || 0,
+				height: win.innerHeight || documentElement.clientHeight || 0
 			}
 		};
 
 		method.getDocumentSize = function() {
 
 			return {
-				width: Math.max(docEl.clientWidth,docEl.offsetWidth,docEl.scrollWidth),
-				height: Math.max(docEl.clientHeight,docEl.offsetHeight,docEl.scrollHeight)
+				width: Math.max(
+					documentElement.clientWidth,
+					documentElement.offsetWidth,
+					documentElement.scrollWidth
+				),
+				height: Math.max(
+					documentElement.clientHeight,
+					documentElement.offsetHeight,
+					documentElement.scrollHeight
+				)
 			};
 		};
 
 		method.Anim = function() {
 
-			var CLASS_NAME_ANIM_ACTIVE = ' cssanimactive',
-				IS_OPERA_EVENT_TYPE_REGEXP = /^o[AT]/,
-				HANDLER_LIST_INDEX_ANIMATION = 0,
-				HANDLER_LIST_INDEX_TRANSITION = 1,
+			var ELEMENT_HANDLER_ID_ATTRIBUTE = 'picohCSSAnimID',
+				CLASS_NAME_ANIM_ACTIVE = 'cssanimactive',
+				HANDLER_TYPE_INDEX_ANIMATION = 0,
+				HANDLER_TYPE_INDEX_TRANSITION = 1,
+				HANDLER_ID_LENGTH = 3,
+				HANDLER_ID_START_CHAR = 97, // character 'a'
+				HANDLER_ID_END_CHAR = 122, // character 'z'
 				method = {},
 				isDetected,
-				animationSupport,
 				animationEventTypeEnd,
-				transitionSupport,
 				transitionEventTypeEnd,
-				handlerList = [undefined,undefined];
+				handlerCollection = [undefined,undefined];
 
-			function detect() {
+			function detectCapabilities() {
 
 				// if already detected support then exit
-				if (isDetected) return;
+				if (isDetected) {
+					return;
+				}
+
 				isDetected = true;
 
-				// list of animation/transition style properties per browser engine and matching DOM event names
-				// the non-prefixed properties are intentionally checked first
-				var ANIMATION_DETECT_LIST = [
-						['animation','animationend'],
-						['MozAnimation','mozAnimationEnd'],
-						['OAnimation','oAnimationEnd'],
-						['webkitAnimation','webkitAnimationEnd']
-					],
-					TRANSITION_DETECT_LIST = [
-						['transition','transitionend'],
-						['MozTransition','mozTransitionEnd'],
-						['OTransition','oTransitionEnd'],
-						['webkitTransition','webkitTransitionEnd']
-					];
+				// list of animation/transition style properties per browser engine and matching event names
+				// note: non-prefixed properties are intentionally checked first
+				var ANIMATION_DETECT_COLLECTION = {
+						animation: 'animationend',
+						webkitAnimation: 'webkitAnimationEnd'
+					},
+					TRANSITION_DETECT_COLLECTION = {
+						transition: 'transitionend',
+						webkitTransition: 'webkitTransitionEnd'
+					};
 
-				function detectHandle(detectList,handler) {
+				function detectEventType(detectCollection) {
 
-					while (detectList.length) {
-						var item = detectList.shift();
-						if (docEl.style[item[0]] !== undefined) {
-							// found property - deligate to handler
-							return handler(item[1]);
+					var styleNameList = Object.keys(detectCollection);
+
+					while (styleNameList.length) {
+						var styleNameItem = styleNameList.shift()
+						if (documentElement.style[styleNameItem] !== undefined) {
+							// found capability
+							return detectCollection[styleNameItem];
 						}
 					}
+
+					// no match
 				}
 
-				// animation support
-				detectHandle(ANIMATION_DETECT_LIST,function(item) {
-
-					animationSupport = true;
-					animationEventTypeEnd = item;
-				});
-
-				// transition support
-				detectHandle(TRANSITION_DETECT_LIST,function(item) {
-
-					transitionSupport = true;
-					transitionEventTypeEnd = item;
-				});
+				// determine if animation and transition support available
+				animationEventTypeEnd = detectEventType(ANIMATION_DETECT_COLLECTION);
+				transitionEventTypeEnd = detectEventType(TRANSITION_DETECT_COLLECTION);
 			}
 
-			function addDocElEvent(type,handler) {
+			function getElHandlerCollectionID(handlerTypeIndex,el) {
 
-				eventAdd(docEl,type,handler);
-				if (IS_OPERA_EVENT_TYPE_REGEXP.test(type)) {
-					// some earlier versions of Opera (Presto) need lowercased event names
-					eventAdd(docEl,type.toLowerCase(),handler);
-				}
+				// look for ID as a custom property of the DOM element
+				var handlerID = el[ELEMENT_HANDLER_ID_ATTRIBUTE];
+
+				return (
+					(handlerID !== undefined) &&
+					(handlerCollection[handlerTypeIndex][handlerID] !== undefined)
+				)
+					// found handler ID in collection
+					? handlerID
+					// not found
+					: false;
 			}
 
-			function getElHandlerListIndex(handlerIndex,el) {
+			function removeElHandlerItem(handlerTypeIndex,el,handlerID) {
 
-				var seekList = handlerList[handlerIndex];
-				if (seekList !== undefined) {
-					for (var index = seekList.length - 1;index >= 0;index--) {
-						if (seekList[index][0] == el) {
-							// found element in handler list
-							return index;
-						}
-					}
-				}
+				// if handlerID already given, no need to find again for element
+				handlerID = handlerID || getElHandlerCollectionID(handlerTypeIndex,el);
 
-				// not found
-				return false;
-			}
+				if (handlerID !== false) {
+					// found element in collection, now remove
+					delete handlerCollection[handlerTypeIndex][handlerID];
+					delete el[ELEMENT_HANDLER_ID_ATTRIBUTE];
 
-			function removeElHandlerItem(handlerIndex,el,index) {
-
-				// if index to remove has been given, don't call getElHandlerListIndex()
-				if (index === undefined) index = getElHandlerListIndex(handlerIndex,el);
-
-				if (index !== false) {
-					// found element in list, remove from handler list array
-					handlerList[handlerIndex].splice(index,1);
-
-					// drop the 'animation active' class from element
-					el.className = trimString(
+					el.className = (
 						(' ' + el.className + ' ').
-						replace(CLASS_NAME_ANIM_ACTIVE + ' ',' ')
-					);
+						replace(' ' + CLASS_NAME_ANIM_ACTIVE + ' ',' ')
+					).trim();
 				}
 			}
 
-			function onEndProcess(hasSupport,eventTypeEnd,handlerIndex,el,handler,data) {
+			function onEndProcess(eventTypeEnd,handlerTypeIndex,el,handler,data) {
 
-				if (!hasSupport) {
-					// no CSS animation/transition support, call handler right away
-					setTimeout(function() { handler(el,data); });
-
-				} else {
-					if (!handlerList[handlerIndex]) {
-						// setup end handler
-						handlerList[handlerIndex] = [];
-						addDocElEvent(eventTypeEnd,function(event) {
-
-							// ensure event returned the target element
-							if (event.target) {
-								// get the element handler list index - skip over event if not found
-								var targetEl = event.target,
-									index = getElHandlerListIndex(handlerIndex,targetEl);
-
-								if (index !== false) {
-									// execute handler then remove from handler list
-									var handlerItem = handlerList[handlerIndex][index];
-									removeElHandlerItem(handlerIndex,targetEl,index);
-									handlerItem[1](targetEl,handlerItem[2]);
-								}
-							}
-						});
-					}
-
-					// remove possible existing end handler associated to element
-					removeElHandlerItem(handlerIndex,el);
-
-					// add element to handler list and a 'animation active' class identifier
-					handlerList[handlerIndex].push([el,handler,data]);
-					el.className = trimString(el.className + CLASS_NAME_ANIM_ACTIVE);
+				if (!eventTypeEnd) {
+					// no animation/transition support - call handler right away
+					return nextTick(function() { handler(el,data); });
 				}
+
+				if (!handlerCollection[handlerTypeIndex]) {
+					// setup end handler
+					handlerCollection[handlerTypeIndex] = {};
+					eventAdd(documentElement,eventTypeEnd,function(event) {
+
+						// ensure event returned a target element
+						if (event.target) {
+							// get the element handler list ID - skip over if not found
+							var targetEl = event.target,
+								handlerID = getElHandlerCollectionID(handlerTypeIndex,targetEl);
+
+							if (handlerID !== false) {
+								// execute handler then remove from handler list
+								var handlerItem = handlerCollection[handlerTypeIndex][handlerID];
+								removeElHandlerItem(handlerTypeIndex,targetEl,handlerID);
+								handlerItem[0](targetEl,handlerItem[1]);
+							}
+						}
+					});
+				}
+
+				// remove possible existing end handler associated to element
+				removeElHandlerItem(handlerTypeIndex,el);
+
+				// generate new, unique handler ID
+				var handlerID;
+				while (!handlerID || handlerCollection[handlerTypeIndex][handlerID]) {
+					handlerID = '';
+					while (handlerID.length < HANDLER_ID_LENGTH) {
+						// append characters between [a-z] to a total of HANDLER_ID_LENGTH
+						handlerID += String.fromCharCode(
+							Math.floor(Math.random() * (HANDLER_ID_END_CHAR - HANDLER_ID_START_CHAR)) +
+							HANDLER_ID_START_CHAR
+						);
+					}
+				}
+
+				// add element to handler list and a 'animation active' class identifier to the target element
+				el[ELEMENT_HANDLER_ID_ATTRIBUTE] = handlerID;
+				handlerCollection[handlerTypeIndex][handlerID] = [handler,data];
+				el.className = el.className.trim() + ' ' + CLASS_NAME_ANIM_ACTIVE;
 			}
 
 			method.onAnimationEnd = function(el,handler,data) {
 
-				detect();
+				detectCapabilities();
+
 				onEndProcess(
-					animationSupport,animationEventTypeEnd,
-					HANDLER_LIST_INDEX_ANIMATION,
+					animationEventTypeEnd,
+					HANDLER_TYPE_INDEX_ANIMATION,
 					el,handler,data
 				);
 			};
 
 			method.cancelAnimationEnd = function(el) {
 
-				removeElHandlerItem(HANDLER_LIST_INDEX_ANIMATION,el);
+				removeElHandlerItem(HANDLER_TYPE_INDEX_ANIMATION,el);
 			};
 
 			method.onTransitionEnd = function(el,handler,data) {
 
-				detect();
+				detectCapabilities();
+
 				onEndProcess(
-					transitionSupport,transitionEventTypeEnd,
-					HANDLER_LIST_INDEX_TRANSITION,
+					transitionEventTypeEnd,
+					HANDLER_TYPE_INDEX_TRANSITION,
 					el,handler,data
 				);
 			};
 
 			method.cancelTransitionEnd = function(el) {
 
-				removeElHandlerItem(HANDLER_LIST_INDEX_TRANSITION,el);
+				removeElHandlerItem(HANDLER_TYPE_INDEX_TRANSITION,el);
 			};
 
 			return method;
 		}();
 
 		// if found, remove the 'nojs' class from the <html> element and add 'js'
-		docEl.className = docEl.className.replace('nojs','js');
+		documentElement.className = documentElement.className.replace('nojs','js');
 
 		return method;
 	}();
@@ -661,16 +598,21 @@
 
 		var REQUEST_HEADER_CONTENT_TYPE_POST = 'application/x-www-form-urlencoded';
 
-		function buildParameters(list) {
+		function buildParameters(parameterCollection) {
 
-			if (list) {
-				var parameters = '';
-				for (var index in list) {
-					parameters += index + '=' + encodeURIComponent(list[index]) + '&';
+			if (parameterCollection) {
+				var propertyList = Object.keys(parameterCollection),
+					URIItemList = [];
+
+				while (propertyList.length) {
+					URIItemList.push(
+						propertyList[0] + '=' +
+						encodeURIComponent(parameterCollection[propertyList.shift()])
+					);
 				}
 
-				// drop final '&'
-				return parameters.slice(0,-1);
+				// return joined parameters
+				return URIItemList.join('&');
 			}
 		}
 
@@ -680,12 +622,12 @@
 
 			if (win.JSON) {
 				// if text starts/ends with '{' and '}' then assume it's JSON data
-				responseText = trimString(responseText);
+				responseText = responseText.trim();
 
-				if (
-					(responseText.slice(0,1) == '{') &&
-					(responseText.slice(-1) == '}')
-				) {
+				if ((
+					(responseText[0] || '') +
+					(responseText[responseText.length - 1] || '')
+				) == '{}') {
 					// attempt to parse
 					try {
 						JSONdata = JSON.parse(responseText);
@@ -696,43 +638,46 @@
 			return JSONdata;
 		}
 
-		return function(url,method,handler,parameterList) {
+		return function(url,method,handler,parameterCollection) {
 
-			if (win.XMLHttpRequest) {
-				var xhr = new XMLHttpRequest(),
-					isPost = (method == 'POST'),
-					parameters = buildParameters(parameterList);
+			var xhr = new XMLHttpRequest(),
+				isPost = (method == 'POST'),
+				parameters = buildParameters(parameterCollection);
 
-				xhr.open(method || 'GET',url + ((!isPost && parameters) ? '?' + parameters : ''),true);
+			xhr.open(
+				method || 'GET',
+				url + ((!isPost && parameters) ? '?' + parameters : ''),
+				true
+			);
 
-				if (handler) {
-					// setup response handler
-					xhr.onreadystatechange = function() {
+			if (handler) {
+				// setup response handler
+				xhr.onreadystatechange = function() {
 
-						if (xhr.readyState == 4) {
-							var isOk = ((xhr.status >= 200) && (xhr.status < 300)),
-								responseText = xhr.responseText;
+					if (xhr.readyState == 4) {
+						var isOk = ((xhr.status >= 200) && (xhr.status < 300)),
+							responseText = xhr.responseText;
 
-							handler({
-								ok: isOk,
-								status: xhr.status,
-								text: (isOk) ? responseText : '',
-								JSON: (isOk) ? parseJSON(responseText) : {}
-							});
-						}
-					};
-				}
-
-				if (isPost && parameters) {
-					xhr.setRequestHeader('Content-type',REQUEST_HEADER_CONTENT_TYPE_POST);
-				}
-
-				// send request and return success
-				xhr.send((isPost && parameters) ? parameters : undefined);
-				return true;
+						handler({
+							ok: isOk,
+							status: xhr.status,
+							text: (isOk) ? responseText : '',
+							JSON: (isOk) ? parseJSON(responseText) : {}
+						});
+					}
+				};
 			}
+
+			if (isPost && parameters) {
+				xhr.setRequestHeader('Content-type',REQUEST_HEADER_CONTENT_TYPE_POST);
+			}
+
+			// send request
+			xhr.send((isPost && parameters) ? parameters : undefined);
 		};
 	})();
 
-	win.$ = picoh;
+
+	// expose library
+	picohAttach.$ = picoh;
 })(window,document);
