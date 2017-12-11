@@ -10,7 +10,7 @@ All methods are namespaced under `window.$` / `window.$$` with no modification o
 - Designed for and tested against the usual suspects of Google Chrome, Firefox and OSX Safari. On the Microsoft front **IE9 and above** is supported.
 	- The final revision supporting IE8 is [tagged here](https://github.com/magnetikonline/picoh/tree/ie8-final).
 - Expects:
-	- A `!DOCTYPE` that puts your pages into *standards mode*, with the [HTML5 doctype](http://w3c.github.io/html/syntax.html#the-doctype) a good selection. More a requirement for full IE compatibility (historically an IE8 gripe), where some core methods used by Picoh [won't make themselves available](http://caniuse.com/#feat=json) in 'quirks mode'. You *can* work around such edge cases, but the result is increased code footprint - exactly what I'm trying to avoid here.
+	- A `!DOCTYPE` that puts your pages into *standards mode*, with the [HTML5 doctype](https://w3c.github.io/html/syntax.html#the-doctype) a good selection. More a requirement for full IE compatibility (historically an IE8 gripe), where some core methods used by Picoh [won't make themselves available](https://caniuse.com/#feat=json) in 'quirks mode'. You *can* work around such edge cases, but the result is increased code footprint - exactly what I'm trying to avoid here.
 	- Picoh loaded ideally from page `<head>` and executed asynchronously (e.g. `<script async src="/uri/to/picoh.js"></script>`).
 	- Removal of both `margin` and `padding` from the `<body>` element to help cross browser consistency with some DOM methods, such as calculating [viewport](#domgetviewportsize) and [document](#domgetdocumentsize) sizes.
 
@@ -120,11 +120,11 @@ $.each(
 );
 ```
 
-**Note:** For evaluating `HTMLCollection`/`NodeList` types, `$.each()` uses [Duck typing](http://en.wikipedia.org/wiki/Duck_typing), looking for `item` and `length` properties.
+**Note:** For evaluating `HTMLCollection`/`NodeList` types, `$.each()` uses [Duck typing](https://en.wikipedia.org/wiki/Duck_typing), looking for `item` and `length` properties.
 
 #### $.nextTick(handler)
-- Emulation of Node.js [`process.nextTick()`](https://nodejs.org/api/process.html#process_process_nexttick_callback_arg) method.
-- Produces a faster and [more efficient](http://dbaron.org/log/20100309-faster-timeouts) callback on the next event loop vs. `window.setTimeout(function() {},0)`.
+- Emulation of Node.js [`process.nextTick()`](https://nodejs.org/api/process.html#process_process_nexttick_callback_args) method.
+- Produces a faster and [more efficient](https://dbaron.org/log/20100309-faster-timeouts) callback on the next event loop vs. `window.setTimeout(function() {},0)`.
 - Implemented using `window.postMessage()` under the hood.
 
 #### $.reqAnimFrame(handler)
@@ -157,10 +157,10 @@ $.Event.add($('domelement'),'click touchstart',clickTouchHandler);
 
 #### $.Event.getTarget(event)
 - Returns the DOM element that the given `event` was dispatched on.
-- Handles the edge case with older versions of Safari where a [text node would be incorrectly returned](http://bugs.jquery.com/ticket/5539).
+- Handles the edge case with older versions of Safari where a [text node would be incorrectly returned](https://bugs.jquery.com/ticket/5539).
 
 #### $.Event.isMouseEnterLeave(event,element)
-Emulates behavior of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ also [natively support](https://developer.mozilla.org/en-US/docs/Web/Events/mouseenter)) event types of [mouseenter](http://msdn.microsoft.com/en-us/library/ie/ms536945\(v=vs.85\).aspx) and [mouseleave](http://msdn.microsoft.com/en-us/library/ie/ms536946\(v=vs.85\).aspx).
+Emulates behavior of the mighty handy and IE only (**note:** Chrome 30+ and Firefox 10+ also natively support) event types of [mouseenter](https://developer.mozilla.org/en-US/docs/Web/Events/mouseenter) and [mouseleave](https://developer.mozilla.org/en-US/docs/Web/Events/mouseleave).
 
 Example:
 
@@ -314,7 +314,7 @@ $.DOM.setStyle(
 #### $.DOM.getDocumentSize()
 - Returns the pixel width and height of the document.
 - Data will be returned as an object with the structure of `{ width: 123,height: 456 }`.
-- Uses the techniques suggested by [Ryan Van Etten](http://responsejs.com/labs/dimensions/#document).
+- Uses the techniques suggested by [Ryan Van Etten](https://ryanve.com/lab/dimensions/#document).
 
 ### Animation/transition end DOM events
 For the background behind these methods and their use, refer to the [cssanimevent](https://github.com/magnetikonline/cssanimevent) library. The following methods have been integrated here.

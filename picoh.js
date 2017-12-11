@@ -163,11 +163,11 @@
 		};
 
 		// getMousePosition() returns the mouse position relative to the document, not the browser viewport
-		// note: event.pageX/event.pageY is mis-reported (behaves like event.clientX/event.clientY) with IE10 10.0.9200.16384, but fixed in 10.0.9200.16484 - http://bugs.jquery.com/ticket/12343
+		// note: event.pageX/event.pageY is mis-reported (behaves like event.clientX/event.clientY) with IE10 10.0.9200.16384, but fixed in 10.0.9200.16484 - https://bugs.jquery.com/ticket/12343
 		method.getMousePosition = function(event) {
 
 			// using Math.round() as IE10 (and other vendors may follow in future) can/will report fractional coordinates due to sub-pixel rendering
-			// http://blogs.msdn.com/b/ie/archive/2012/02/17/sub-pixel-rendering-and-the-css-object-model.aspx
+			// https://blogs.msdn.microsoft.com/ie/2012/02/17/sub-pixel-rendering-and-the-css-object-model/
 			return {
 				x: Math.round(event.pageX || 0),
 				y: Math.round(event.pageY || 0)
