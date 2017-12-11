@@ -118,7 +118,7 @@
 		? function(handler) { reqAnimFrameNative(handler); }
 		: function(handler) {
 
-			// note: can remove faux handler in place of all native once IE10 is base support level
+			// note: can remove faux handler for all native once IE10 is base support level
 			// faux window.requestAnimationFrame() method
 			// call approximately every REQUEST_ANIMATION_FRAME_FAUX_DELAY milliseconds
 			var currentTime = Date.now(),
@@ -216,9 +216,9 @@
 				DOMReadyHandlerList = [];
 
 				// window.load required as fallback because if:
-				// - Picoh successfully loaded after 'DOMContentLoaded' fired
+				// - Picoh loads after 'DOMContentLoaded' fires
 				// - ...but before (doc.readyState == 'complete')
-				// - handlers would be pushed onto DOMReadyHandlerList - but never get actioned
+				// - handlers will be pushed to [DOMReadyHandlerList], but never get actioned
 				eventAdd(doc,DOM_CONTENT_LOADED_EVENT_NAME,DOMReadyHandler);
 				eventAdd(win,'load',DOMReadyHandler);
 			}
