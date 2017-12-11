@@ -374,7 +374,10 @@
 				left += el.offsetLeft;
 				top += el.offsetTop;
 
-				if (toParent) break;
+				if (toParent) {
+					break;
+				}
+
 				el = el.offsetParent;
 			}
 
